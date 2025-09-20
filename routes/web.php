@@ -65,6 +65,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/products/{product}/like', [RatingController::class, 'toggleProductLike'])->name('products.like');
     Route::post('/products/{product}/comment', [RatingController::class, 'commentProduct'])->name('products.comment');
     Route::get('/products/{product}/comments', [RatingController::class, 'getProductComments'])->name('products.comments');
+    Route::delete('/product-comments/{comment}', [RatingController::class, 'deleteProductComment'])->name('product-comments.destroy');
     
     Route::post('/hotels/{businessProfile}/rate', [RatingController::class, 'rateHotel'])->name('hotels.rate');
     Route::post('/hotels/{businessProfile}/like', [RatingController::class, 'toggleHotelLike'])->name('hotels.like');
@@ -373,8 +374,4 @@ Route::middleware('auth')->group(function () {
     Route::get('/tourist-spots/{id}/comments', [CustomerController::class, 'getTouristSpotComments'])->name('tourist-spots.comments');
     Route::post('/tourist-spots/{id}/comment', [CustomerController::class, 'commentTouristSpot'])->name('tourist-spots.comment');
 });
-// Product interaction routes
-Route::post('/products/{product}/like', [ProductController::class, 'toggleLike'])->name('products.like');
-Route::get('/products/{product}/comments', [ProductController::class, 'getComments'])->name('products.comments');
-Route::post('/products/{product}/rate', [ProductController::class, 'rateProduct'])->name('products.rate');
-Route::post('/products/{product}/comment', [ProductController::class, 'addComment'])->name('products.comment');
+// Product interaction routes are already defined in the auth middleware group above

@@ -47,22 +47,46 @@ class Product extends Model
         return $this->hasMany(ProductRating::class);
     }
 
+    /**
+     * Get all comments for the product.
+     */
     public function comments()
     {
-        return $this->hasMany(ProductComment::class);
+        return $this->hasMany(ProductComment::class)->with('user');
     }
 
+    /**
+     * Get all likes for the product.
+     */
     public function likes()
     {
         return $this->hasMany(ProductLike::class);
     }
 
+    /**
+     * Check if the authenticated user has liked the product.
+     */
+    public function isLikedByUser()
+    {
+        if (!auth()->check()) {
+            return false;
+        }
+        
+        return $this->likes()->where('user_id', auth()->id())->exists();
+    }
+
+    /**
+     * Check if a specific user has liked the product
+     */
     public function isLikedBy($user)
     {
         if (!$user) return false;
         return $this->likes()->where('user_id', $user->id)->exists();
     }
 
+    /**
+     * Update the product's rating based on all its ratings.
+     */
     public function updateRating()
     {
         $ratings = $this->ratings();
@@ -71,6 +95,17 @@ class Product extends Model
         $this->save();
     }
 
+    /**
+     * Get the URL for the product's image.
+     */
+    public function getImageUrlAttribute()
+    {
+        return $this->image ? Storage::url($this->image) : asset('images/default-product.png');
+    }
+
+    /**
+     * Get all feedback/ratings for the product.
+     */
     public function feedbacks()
     {
         return $this->ratings();

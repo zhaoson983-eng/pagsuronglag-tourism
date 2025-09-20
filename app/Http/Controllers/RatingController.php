@@ -75,7 +75,6 @@ class RatingController extends Controller
     {
         $request->validate([
             'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'nullable|string|max:1000',
         ]);
 
         // Check if user already rated this product
@@ -87,7 +86,6 @@ class RatingController extends Controller
             // Update existing rating
             $existingRating->update([
                 'rating' => $request->rating,
-                'comment' => $request->comment,
             ]);
         } else {
             // Create new rating
@@ -95,7 +93,6 @@ class RatingController extends Controller
                 'product_id' => $product->id,
                 'user_id' => Auth::id(),
                 'rating' => $request->rating,
-                'comment' => $request->comment,
             ]);
         }
 
@@ -104,9 +101,9 @@ class RatingController extends Controller
 
         return response()->json([
             'success' => true,
-            'average_rating' => $product->fresh()->average_rating,
+            'average_rating' => (float) $product->fresh()->average_rating,
             'total_ratings' => $product->ratings()->count(),
-            'user_rating' => $request->rating,
+            'user_rating' => (int) $request->rating,
         ]);
     }
 
@@ -468,20 +465,82 @@ class RatingController extends Controller
      */
     public function commentProduct(Request $request, Product $product)
     {
-        $request->validate([
-            'comment' => 'required|string|max:1000',
-        ]);
+        try {
+            $request->validate([
+                'comment' => 'required|string|max:1000',
+            ]);
 
-        ProductComment::create([
-            'product_id' => $product->id,
-            'user_id' => Auth::id(),
-            'comment' => $request->comment,
-        ]);
+            $comment = $product->comments()->create([
+                'user_id' => Auth::id(),
+                'comment' => $request->comment,
+            ]);
+            
+            // Load the user relationship with profile
+            $comment->load(['user' => function($query) {
+                $query->select('id', 'name', 'email')
+                    ->with('profile');
+            }]);
+            
+            $avatarUrl = null;
+            
+            if ($comment->user->relationLoaded('profile') && $comment->user->profile) {
+                if (!empty($comment->user->profile->profile_picture)) {
+                    $avatarPath = $comment->user->profile->profile_picture;
+                    if (Storage::exists($avatarPath)) {
+                        $avatarUrl = Storage::url($avatarPath);
+                    } else {
+                        \Log::warning('Profile picture file not found when adding comment:', [
+                            'user_id' => $comment->user->id,
+                            'profile_picture_path' => $avatarPath
+                        ]);
+                    }
+                }
+            }
+            
+            // Fallback to default avatar if no profile picture found
+            if (!$avatarUrl) {
+                $avatarUrl = asset('images/default-avatar.png');
+            }
+            
+            $commentData = [
+                'id' => $comment->id,
+                'comment' => $comment->comment,
+                'created_at' => $comment->created_at->diffForHumans(),
+                'created_at_human' => $comment->created_at->diffForHumans(),
+                'user' => [
+                    'id' => $comment->user->id,
+                    'name' => $comment->user->name,
+                    'profile_picture' => $avatarUrl,
+                ],
+                'user_name' => $comment->user->name,
+                'can_delete' => true
+            ];
+            
+            // Log successful comment addition
+            \Log::info('New comment added to product', [
+                'product_id' => $product->id,
+                'comment_id' => $comment->id,
+                'user_id' => Auth::id()
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Comment added successfully',
-        ]);
+            return response()->json([
+                'success' => true,
+                'comment' => $commentData
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error adding comment to product: ' . $e->getMessage(), [
+                'product_id' => $product->id,
+                'user_id' => Auth::id(),
+                'exception' => $e
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to add comment. Please try again.',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
     }
 
     /**
@@ -552,32 +611,84 @@ class RatingController extends Controller
      */
     public function getProductComments(Product $product)
     {
-        $comments = $product->comments()->with('user.profile')->whereHas('user')->latest()->get();
-        
-        return response()->json([
-            'success' => true,
-            'comments' => $comments->map(function ($comment) {
+        try {
+            // Debug: Log the product ID
+            \Log::info('Fetching comments for product ID: ' . $product->id);
+            
+            $comments = $product->comments()
+                ->with(['user' => function($query) {
+                    $query->select('id', 'name', 'email')
+                        ->with('profile');
+                }])
+                ->whereHas('user')
+                ->latest()
+                ->get();
+
+            // Debug: Log the number of comments found
+            \Log::info('Found ' . $comments->count() . ' comments for product ID: ' . $product->id);
+
+            $formattedComments = $comments->map(function ($comment) {
                 if (!$comment->user) {
+                    \Log::warning('Comment has no user:', ['comment_id' => $comment->id]);
                     return null;
                 }
                 
-                return [
-                    'id' => $comment->id,
-                    'comment' => $comment->comment,
-                    'user_id' => $comment->user->id,
-                    'user' => [
-                        'id' => $comment->user->id,
-                        'name' => $comment->user->name,
-                        'profile_picture' => $comment->user->profile && $comment->user->profile->profile_picture ? 
-                            Storage::url($comment->user->profile->profile_picture) : null,
-                    ],
-                    'user_name' => $comment->user->name,
-                    'can_delete' => Auth::id() === $comment->user->id,
-                    'created_at' => $comment->created_at->format('M j, Y g:i A'),
-                    'created_at_human' => $comment->created_at->diffForHumans(),
-                ];
-            })->filter()->values(),
-        ]);
+                try {
+                    $avatarUrl = null;
+                    
+                    if ($comment->user->relationLoaded('profile') && $comment->user->profile) {
+                        if (!empty($comment->user->profile->profile_picture)) {
+                            $avatarPath = $comment->user->profile->profile_picture;
+                            $avatarUrl = Storage::url($avatarPath);
+                        }
+                    }
+                    
+                    // Fallback to default avatar if no profile picture found
+                    if (!$avatarUrl) {
+                        $avatarUrl = asset('images/default-avatar.png');
+                    }
+                    
+                    return [
+                        'id' => $comment->id,
+                        'comment' => $comment->comment,
+                        'created_at' => $comment->created_at->format('M j, Y g:i A'),
+                        'created_at_human' => $comment->created_at->diffForHumans(),
+                        'user_id' => $comment->user->id,
+                        'user' => [
+                            'id' => $comment->user->id,
+                            'name' => $comment->user->name,
+                            'profile_picture' => $avatarUrl,
+                        ],
+                        'user_name' => $comment->user->name,
+                        'can_delete' => Auth::id() === $comment->user_id || (Auth::user() && Auth::user()->hasRole('admin'))
+                    ];
+                } catch (\Exception $e) {
+                    \Log::error('Error processing comment: ' . $e->getMessage(), [
+                        'comment_id' => $comment->id,
+                        'user_id' => $comment->user_id,
+                        'exception' => $e
+                    ]);
+                    return null;
+                }
+            })->filter()->values();
+
+            return response()->json([
+                'success' => true,
+                'comments' => $formattedComments
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error in getProductComments: ' . $e->getMessage(), [
+                'product_id' => $product->id,
+                'exception' => $e
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load comments. Please try again later.',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
     }
 
     /**
@@ -710,14 +821,44 @@ class RatingController extends Controller
      */
     public function deleteResortComment(ResortComment $comment)
     {
-        // Check if user owns the comment
-        if ($comment->user_id !== Auth::id()) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        if (Auth::id() !== $comment->user_id && !Auth::user()->hasRole('admin')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized action.'
+            ], 403);
         }
 
         $comment->delete();
-        
-        return response()->json(['success' => true, 'message' => 'Comment deleted successfully']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Comment deleted successfully',
+        ]);
+    }
+    
+    /**
+     * Delete a product comment
+     */
+    public function deleteProductComment(ProductComment $comment)
+    {
+        if (Auth::id() !== $comment->user_id && !Auth::user()->hasRole('admin')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized action.'
+            ], 403);
+        }
+
+        $productId = $comment->product_id;
+        $comment->delete();
+
+        // Get updated comments count
+        $commentsCount = ProductComment::where('product_id', $productId)->count();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Comment deleted successfully',
+            'comments_count' => $commentsCount
+        ]);
     }
 
     /**

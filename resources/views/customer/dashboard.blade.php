@@ -739,42 +739,143 @@ function likeComment(commentId) {
     });
 }
 
-function deleteComment(commentId, type, contentId) {
-    if (confirm('Are you sure you want to delete this comment?')) {
-        fetch(`/comments/${commentId}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const commentElement = document.getElementById(`comment-${commentId}`);
-                if (commentElement) {
-                    commentElement.remove();
-                }
-                // Update comment count in feed without refreshing entire feed
-                updateFeedItemCommentCount(type, contentId);
-            } else {
-                alert(data.error || 'Error deleting comment');
-            }
-        })
-        .catch(error => {
-            console.error('Error deleting comment:', error);
-            alert('Error deleting comment');
-        });
+function deleteComment(commentId, type, itemId) {
+    if (!confirm('Are you sure you want to delete this comment?')) {
+        return;
     }
+    
+    // Determine the correct route based on type
+    let route = '';
+    switch(type) {
+        case 'business':
+            route = `/comments/${commentId}`;
+            break;
+        case 'hotel':
+            route = `/hotel-comments/${commentId}`;
+            break;
+        case 'resort':
+            route = `/resort-comments/${commentId}`;
+            break;
+        case 'attraction':
+            route = `/tourist-spots/comments/${commentId}`;
+            break;
+        case 'product':
+            route = `/product-comments/${commentId}`;
+            break;
+        default:
+            console.error('Unknown type:', type);
+            return;
+    }
+    
+    fetch(route, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => {
+                throw new Error(err.message || 'Failed to delete comment');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Remove the comment from the UI
+            const commentElement = document.getElementById(`comment-${commentId}`);
+            if (commentElement) {
+                commentElement.remove();
+            }
+            
+            // Update comment count in the feed
+            updateFeedItemCommentCount(type, itemId);
+            
+            // If no comments left, show a message
+            const commentsList = document.getElementById(`comments-list-${type}-${itemId}`);
+            if (commentsList && commentsList.children.length === 0) {
+                commentsList.innerHTML = '<div class="text-center py-4 text-gray-500">No comments yet. Be the first to comment!</div>';
+            }
+            
+            // Show success message
+            const successMessage = document.createElement('div');
+            successMessage.className = 'bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4';
+            successMessage.setAttribute('role', 'alert');
+            successMessage.innerHTML = `
+                <span class="block sm:inline">${data.message || 'Comment deleted successfully'}</span>
+            `;
+            
+            const container = document.querySelector(`#comments-${type}-${itemId}`) || 
+                            document.querySelector(`#comments-list-${type}-${itemId}`) || 
+                            document.querySelector(`.comments-container`);
+            
+            if (container) {
+                container.prepend(successMessage);
+                
+                // Remove the message after 3 seconds
+                setTimeout(() => {
+                    successMessage.remove();
+                }, 3000);
+            }
+        } else {
+            throw new Error(data.message || 'Failed to delete comment');
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting comment:', error);
+        // Show error message
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4';
+        errorMessage.setAttribute('role', 'alert');
+        errorMessage.innerHTML = `
+            <span class="block sm:inline">${error.message || 'Error deleting comment'}</span>
+        `;
+        
+        const container = document.querySelector(`#comments-${type}-${itemId}`) || 
+                        document.querySelector(`#comments-list-${type}-${itemId}`) || 
+                        document.querySelector(`.comments-container`);
+        
+        if (container) {
+            container.prepend(errorMessage);
+            
+            // Remove the message after 5 seconds
+            setTimeout(() => {
+                errorMessage.remove();
+            }, 5000);
+        }
+    });
 }
 
 // Helper functions to update feed items without full refresh
 function updateFeedItemRating(type, id, averageRating, totalRatings) {
-    const feedItem = document.querySelector(`[onclick*="toggleLike('${type}', ${id})"]`).closest('.bg-white');
+    const feedItem = document.querySelector(`[onclick*="toggleLike('${type}', ${id})"]`)?.closest('.bg-white');
     if (feedItem) {
         const ratingButton = feedItem.querySelector(`[onclick*="showRating('${type}', ${id})"] span`);
         if (ratingButton) {
-            ratingButton.textContent = `${averageRating.toFixed(1)} (${totalRatings})`;
+            // Ensure averageRating is a number before calling toFixed
+            const ratingValue = typeof averageRating === 'number' ? averageRating : parseFloat(averageRating) || 0;
+            ratingButton.textContent = `${ratingValue.toFixed(1)} (${totalRatings || 0})`;
+            
+            // Also update the rating stars if they exist
+            const starsContainer = feedItem.querySelector('.rating-stars');
+            if (starsContainer) {
+                const stars = starsContainer.querySelectorAll('i');
+                const roundedRating = Math.round(ratingValue * 2) / 2; // Round to nearest 0.5
+                
+                stars.forEach((star, index) => {
+                    if (index < Math.floor(roundedRating)) {
+                        star.className = 'fas fa-star text-yellow-400';
+                    } else if (index < Math.ceil(roundedRating)) {
+                        star.className = 'fas fa-star-half-alt text-yellow-400';
+                    } else {
+                        star.className = 'far fa-star text-yellow-400';
+                    }
+                });
+            }
         }
     }
 }
