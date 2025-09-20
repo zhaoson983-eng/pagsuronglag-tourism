@@ -156,6 +156,9 @@ Route::middleware(['auth'])->group(function () {
     // Feed routes - accessible to authenticated users
     Route::get('/customer/feed', [CustomerController::class, 'getFeedData'])->name('customer.feed');
     Route::get('/customer/products/feed', [ProductController::class, 'getProductsFeedData'])->name('customer.products.feed');
+    Route::get('/customer/hotels/feed', [CustomerController::class, 'getHotelsFeedData'])->name('customer.hotels.feed');
+    Route::get('/customer/resorts/feed', [CustomerController::class, 'getResortsFeedData'])->name('customer.resorts.feed');
+    Route::get('/customer/attractions/feed', [CustomerController::class, 'getAttractionsFeedData'])->name('customer.attractions.feed');
     
     Route::middleware(['role:customer'])->group(function () {
         Route::get('/customer/dashboard', [CustomerController::class, 'dashboard'])->name('customer.dashboard');

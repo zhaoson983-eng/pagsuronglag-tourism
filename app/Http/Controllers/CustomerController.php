@@ -42,6 +42,9 @@ class CustomerController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
         
+        // This method now serves as a general feed with all types of content
+        // For specific feed types, we'll use the dedicated methods below
+        
         $page = $request->get('page', 1);
         $perPage = 10;
         $offset = ($page - 1) * $perPage;
@@ -296,6 +299,165 @@ class CustomerController extends Controller
     /**
      * Search across businesses, products, and attractions.
      */
+    /**
+     * Get hotels feed data
+     */
+    public function getHotelsFeedData(Request $request)
+    {
+        if (!auth()->check()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $page = $request->get('page', 1);
+        $perPage = 10;
+        $offset = ($page - 1) * $perPage;
+
+        // Get published hotels
+        $hotels = Business::with(['businessProfile', 'rooms'])
+            ->whereHas('businessProfile', function($query) {
+                $query->where('business_type', 'hotel')
+                      ->where('status', 'approved');
+            })
+            ->where('is_published', true)
+            ->get()
+            ->map(function($hotel) {
+                $profile = $hotel->businessProfile;
+                $user = auth()->user();
+                $userLiked = $user ? $profile->hotelLikes()->where('user_id', $user->id)->exists() : false;
+                $userRating = $user ? $profile->hotelRatings()->where('user_id', $user->id)->first() : null;
+                
+                return [
+                    'type' => 'hotel',
+                    'id' => $profile->id,
+                    'title' => $profile->business_name ?? $hotel->name ?? 'Hotel',
+                    'location' => $profile->address ?? 'Location not specified',
+                    'description' => $profile->description ?? '',
+                    'image' => $profile->cover_image ? Storage::url($profile->cover_image) : null,
+                    'profile_avatar' => $profile->profile_avatar ? Storage::url($profile->profile_avatar) : null,
+                    'rating' => (float)($profile->average_rating ?? 0),
+                    'rating_count' => (int)($profile->total_ratings ?? 0),
+                    'like_count' => $profile->hotelLikes()->count(),
+                    'comment_count' => $profile->hotelComments()->count(),
+                    'user_liked' => $userLiked,
+                    'user_rating' => $userRating ? $userRating->rating : 0,
+                    'status' => 'Published',
+                    'url' => route('customer.hotels.show', $hotel->id),
+                    'created_at' => $hotel->created_at->toIso8601String(),
+                    'min_price' => $hotel->rooms->min('price_per_night') ?? 0,
+                    'rooms_count' => $hotel->rooms->count()
+                ];
+            });
+
+        return response()->json([
+            'items' => $hotels->slice($offset, $perPage)->values(),
+            'hasMore' => $hotels->count() > ($offset + $perPage)
+        ]);
+    }
+
+    /**
+     * Get resorts feed data
+     */
+    public function getResortsFeedData(Request $request)
+    {
+        if (!auth()->check()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $page = $request->get('page', 1);
+        $perPage = 10;
+        $offset = ($page - 1) * $perPage;
+
+        // Get published resorts
+        $resorts = BusinessProfile::with(['business', 'gallery'])
+            ->where('business_type', 'resort')
+            ->where('status', 'approved')
+            ->whereHas('business', function($q) {
+                $q->where('is_published', true);
+            })
+            ->get()
+            ->map(function($resort) {
+                $user = auth()->user();
+                $userLiked = $user ? $resort->resortLikes()->where('user_id', $user->id)->exists() : false;
+                $userRating = $user ? $resort->resortRatings()->where('user_id', $user->id)->first() : null;
+                
+                return [
+                    'type' => 'resort',
+                    'id' => $resort->id,
+                    'title' => $resort->business_name ?? 'Resort',
+                    'location' => $resort->address ?? 'Location not specified',
+                    'description' => $resort->description ?? '',
+                    'image' => $resort->cover_image ? Storage::url($resort->cover_image) : 
+                             ($resort->gallery->first() ? Storage::url($resort->gallery->first()->image_path) : null),
+                    'profile_avatar' => $resort->profile_avatar ? Storage::url($resort->profile_avatar) : null,
+                    'rating' => (float)($resort->average_rating ?? 0),
+                    'rating_count' => (int)($resort->total_ratings ?? 0),
+                    'like_count' => $resort->resortLikes()->count(),
+                    'comment_count' => $resort->resortComments()->count(),
+                    'user_liked' => $userLiked,
+                    'user_rating' => $userRating ? $userRating->rating : 0,
+                    'status' => 'Published',
+                    'url' => route('customer.resorts.show', $resort->id),
+                    'created_at' => $resort->created_at->toIso8601String(),
+                    'min_price' => $resort->business->rooms->min('price_per_night') ?? 0,
+                    'rooms_count' => $resort->business->rooms->count(),
+                    'cottages_count' => $resort->business->cottages->count()
+                ];
+            });
+
+        return response()->json([
+            'items' => $resorts->slice($offset, $perPage)->values(),
+            'hasMore' => $resorts->count() > ($offset + $perPage)
+        ]);
+    }
+
+    /**
+     * Get attractions feed data
+     */
+    public function getAttractionsFeedData(Request $request)
+    {
+        if (!auth()->check()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $page = $request->get('page', 1);
+        $perPage = 10;
+        $offset = ($page - 1) * $perPage;
+
+        // Get active tourist spots
+        $attractions = TouristSpot::where('is_active', true)
+            ->get()
+            ->map(function($spot) {
+                $user = auth()->user();
+                $userLiked = $user ? $spot->likes()->where('user_id', $user->id)->exists() : false;
+                $userRating = $user ? $spot->ratings()->where('user_id', $user->id)->first() : null;
+                
+                return [
+                    'type' => 'attraction',
+                    'id' => $spot->id,
+                    'title' => $spot->name ?? 'Tourist Spot',
+                    'location' => $spot->location ?? 'Location not specified',
+                    'description' => $spot->description ?? '',
+                    'image' => $spot->cover_image ? Storage::url($spot->cover_image) : 
+                             ($spot->image ? Storage::url($spot->image) : null),
+                    'profile_avatar' => $spot->profile_avatar ? Storage::url($spot->profile_avatar) : null,
+                    'rating' => (float)($spot->average_rating ?? 0),
+                    'rating_count' => (int)($spot->total_ratings ?? 0),
+                    'like_count' => $spot->likes()->count(),
+                    'comment_count' => $spot->comments()->count(),
+                    'user_liked' => $userLiked,
+                    'user_rating' => $userRating ? $userRating->rating : 0,
+                    'status' => 'Published',
+                    'url' => route('customer.attractions.show', $spot->id),
+                    'created_at' => $spot->created_at->toIso8601String()
+                ];
+            });
+
+        return response()->json([
+            'items' => $attractions->slice($offset, $perPage)->values(),
+            'hasMore' => $attractions->count() > ($offset + $perPage)
+        ]);
+    }
+
     public function search(Request $request)
     {
         $q = trim((string) $request->get('q', ''));
