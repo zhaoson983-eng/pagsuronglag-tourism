@@ -96,8 +96,16 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'stock_limit' => 'required|integer|min:0',
+            'current_stock' => 'required|integer|min:0',
+            'flavors' => 'nullable|string|max:255',
+            'image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
         ]);
+
+        // Ensure current stock doesn't exceed stock limit
+        if ($validated['current_stock'] > $validated['stock_limit']) {
+            return back()->with('error', 'Current stock cannot exceed stock limit!')->withInput();
+        }
 
         $business = Auth::user()->business;
         if (!$business) {
@@ -106,9 +114,14 @@ class ProductController extends Controller
 
         $validated['business_id'] = $business->id;
 
+        // Handle image upload
         if ($request->hasFile('image')) {
             $validated['image'] = $request->file('image')->store('products', 'public');
         }
+
+        // Set default values if not provided
+        $validated['stock_limit'] = $validated['stock_limit'] ?? 0;
+        $validated['current_stock'] = $validated['current_stock'] ?? 0;
 
         $product = Product::create($validated);
         
@@ -127,7 +140,8 @@ class ProductController extends Controller
             }
         }
         
-        return redirect()->route($redirectRoute)->with('success', 'Product created successfully!');
+        return redirect()->route($redirectRoute)
+            ->with('success', 'Product created successfully!');
     }
 
     public function edit(Product $product)
@@ -144,10 +158,23 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
-            'image' => 'nullable|image',
+            'stock_limit' => 'required|integer|min:0',
+            'current_stock' => 'required|integer|min:0|max:' . $request->stock_limit,
+            'flavors' => 'nullable|string|max:255',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
+        // Ensure current stock doesn't exceed stock limit
+        if ($validated['current_stock'] > $validated['stock_limit']) {
+            return back()->with('error', 'Current stock cannot exceed stock limit!')->withInput();
+        }
+
+        // Handle image upload if a new image is provided
         if ($request->hasFile('image')) {
+            // Delete old image if exists
+            if ($product->image) {
+                Storage::disk('public')->delete($product->image);
+            }
             $validated['image'] = $request->file('image')->store('products', 'public');
         }
 
@@ -168,7 +195,8 @@ class ProductController extends Controller
             }
         }
         
-        return redirect()->route($redirectRoute)->with('success', 'Product updated successfully!');
+        return redirect()->route($redirectRoute)
+            ->with('success', 'Product updated successfully!');
     }
 
     public function destroy(Product $product)
