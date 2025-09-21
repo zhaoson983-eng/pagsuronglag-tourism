@@ -1,62 +1,38 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('content')
-<div class="min-h-screen bg-gray-50">
-    <!-- Category Cards Section -->
-    <div class="px-4 py-6 bg-white">
-        <!-- Mobile: 4 columns, Desktop: 4 columns centered -->
-        <div class="grid grid-cols-4 gap-4 md:max-w-2xl md:mx-auto">
-            <!-- Products & Shops - Active -->
-            <a href="{{ route('customer.products') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-100 border-2 border-blue-300 transition-colors">
-                <div class="w-12 h-12 md:w-16 md:h-16 bg-blue-600 rounded-full flex items-center justify-center mb-2">
-                    <i class="fas fa-shopping-basket text-white text-lg md:text-xl"></i>
-                </div>
-                <span class="text-xs md:text-sm font-medium text-blue-700 text-center leading-tight">Products & Shops</span>
-            </a>
-
-            <!-- Hotels -->
-            <a href="{{ route('customer.hotels') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
-                <div class="w-12 h-12 md:w-16 md:h-16 bg-blue-500 rounded-full flex items-center justify-center mb-2">
-                    <i class="fas fa-hotel text-white text-lg md:text-xl"></i>
-                </div>
-                <span class="text-xs md:text-sm font-medium text-gray-700 text-center leading-tight">Hotels</span>
-            </a>
-
-            <!-- Resorts -->
-            <a href="{{ route('customer.resorts') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
-                <div class="w-12 h-12 md:w-16 md:h-16 bg-blue-500 rounded-full flex items-center justify-center mb-2">
-                    <i class="fas fa-umbrella-beach text-white text-lg md:text-xl"></i>
-                </div>
-                <span class="text-xs md:text-sm font-medium text-gray-700 text-center leading-tight">Resorts</span>
-            </a>
-
-            <!-- Attractions -->
-            <a href="{{ route('customer.attractions') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
-                <div class="w-12 h-12 md:w-16 md:h-16 bg-blue-500 rounded-full flex items-center justify-center mb-2">
-                    <i class="fas fa-map-marked-alt text-white text-lg md:text-xl"></i>
-                </div>
-                <span class="text-xs md:text-sm font-medium text-gray-700 text-center leading-tight">Attractions</span>
-            </a>
+<!-- Desktop Layout -->
+<div class="hidden lg:block">
+    <!-- Page Header -->
+    <div class="bg-white border-b border-gray-200 px-6 py-6">
+        <div class="text-center">
+            <h1 class="text-2xl font-bold text-gray-900 mb-2 flex items-center justify-center">
+                <i class="fas fa-shopping-basket mr-3 text-blue-600"></i>
+                Products & Shops
+            </h1>
+            <p class="text-gray-600 max-w-2xl mx-auto">Discover local products and shops in Lagonoy</p>
         </div>
-
-        <!-- Search Bar -->
-        <div class="mt-6 max-w-2xl mx-auto">
-            <form action="{{ route('customer.search') }}" method="GET" class="flex gap-2">
+    </div>
+    
+    <!-- Search Bar -->
+    <div class="bg-white border-b border-gray-200 px-6 py-4">
+        <form action="{{ route('customer.search') }}" method="GET" class="max-w-2xl mx-auto">
+            <div class="flex gap-2">
                 <input type="text"
                        name="q"
                        value="{{ request('q') }}"
-                       placeholder="Search for products, businesses, or tourist spots..."
+                       placeholder="Search for products and shops..."
                        class="flex-1 px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800">
                 <button type="submit" class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors">
                     <i class="fas fa-search"></i> Search
                 </button>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
-
+    
     <!-- Feed Section -->
-    <div class="px-4 py-2 max-w-2xl mx-auto">
-        <div id="feed-container" class="space-y-4">
+    <div class="px-6 py-6">
+        <div id="feed-container" class="space-y-6 max-w-2xl mx-auto">
             <!-- Feed items will be loaded here -->
         </div>
         
@@ -68,6 +44,81 @@
         
         <!-- No content message -->
         <div id="no-content" class="text-center py-12 hidden">
+            <i class="fas fa-shopping-basket text-gray-400 text-4xl mb-4"></i>
+            <p class="text-gray-500 text-lg">No products available at the moment</p>
+            <p class="text-gray-400 text-sm">Check back later for new products and shops!</p>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Layout -->
+<div class="lg:hidden">
+    <!-- Category Cards Section -->
+    <div class="px-4 py-6 bg-white">
+        <!-- Mobile: 4 columns, Desktop: 4 columns centered -->
+        <div class="grid grid-cols-4 gap-4">
+            <!-- Products & Shops - Active -->
+            <a href="{{ route('customer.products') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-100 border-2 border-blue-300 transition-colors">
+                <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mb-2">
+                    <i class="fas fa-shopping-basket text-white text-lg"></i>
+                </div>
+                <span class="text-xs font-medium text-blue-700 text-center leading-tight">Products & Shops</span>
+            </a>
+
+            <!-- Hotels -->
+            <a href="{{ route('customer.hotels') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
+                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mb-2">
+                    <i class="fas fa-hotel text-white text-lg"></i>
+                </div>
+                <span class="text-xs font-medium text-gray-700 text-center leading-tight">Hotels</span>
+            </a>
+
+            <!-- Resorts -->
+            <a href="{{ route('customer.resorts') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
+                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mb-2">
+                    <i class="fas fa-umbrella-beach text-white text-lg"></i>
+                </div>
+                <span class="text-xs font-medium text-gray-700 text-center leading-tight">Resorts</span>
+            </a>
+
+            <!-- Attractions -->
+            <a href="{{ route('customer.attractions') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
+                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mb-2">
+                    <i class="fas fa-map-marked-alt text-white text-lg"></i>
+                </div>
+                <span class="text-xs font-medium text-gray-700 text-center leading-tight">Attractions</span>
+            </a>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="mt-6">
+            <form action="{{ route('customer.search') }}" method="GET" class="flex gap-2">
+                <input type="text"
+                       name="q"
+                       value="{{ request('q') }}"
+                       placeholder="Search for products and shops..."
+                       class="flex-1 px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800">
+                <button type="submit" class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Mobile Feed Section -->
+    <div class="px-4 py-2">
+        <div id="mobile-feed-container" class="space-y-4">
+            <!-- Feed items will be loaded here -->
+        </div>
+        
+        <!-- Loading indicator -->
+        <div id="mobile-loading" class="text-center py-8 hidden">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            <p class="mt-2 text-gray-500">Loading more...</p>
+        </div>
+        
+        <!-- No content message -->
+        <div id="mobile-no-content" class="text-center py-12 hidden">
             <i class="fas fa-shopping-basket text-gray-400 text-4xl mb-4"></i>
             <p class="text-gray-500 text-lg">No products available at the moment</p>
             <p class="text-gray-400 text-sm">Check back later for new products and shops!</p>
@@ -131,8 +182,17 @@ function loadFeedData() {
     if (loading) return;
     
     loading = true;
-    document.getElementById('loading').classList.remove('hidden');
-    document.getElementById('no-content').classList.add('hidden');
+    
+    // Handle both desktop and mobile loading indicators
+    const loadingElement = document.getElementById('loading');
+    const mobileLoadingElement = document.getElementById('mobile-loading');
+    const noContentElement = document.getElementById('no-content');
+    const mobileNoContentElement = document.getElementById('mobile-no-content');
+    
+    if (loadingElement) loadingElement.classList.remove('hidden');
+    if (mobileLoadingElement) mobileLoadingElement.classList.remove('hidden');
+    if (noContentElement) noContentElement.classList.add('hidden');
+    if (mobileNoContentElement) mobileNoContentElement.classList.add('hidden');
     
     fetch(`/customer/products/feed?page=${currentPage}`, {
             headers: {
@@ -150,39 +210,51 @@ function loadFeedData() {
         .then(data => {
             console.log('Feed data received:', data);
             const container = document.getElementById('feed-container');
+            const mobileContainer = document.getElementById('mobile-feed-container');
             
             if (currentPage === 1) {
-                container.innerHTML = '';
+                if (container) container.innerHTML = '';
+                if (mobileContainer) mobileContainer.innerHTML = '';
             }
             
             if (data.items && data.items.length > 0) {
                 data.items.forEach(item => {
-                    container.appendChild(createFeedItem(item));
+                    const feedItem = createFeedItem(item);
+                    if (container) container.appendChild(feedItem.cloneNode(true));
+                    if (mobileContainer) mobileContainer.appendChild(createFeedItem(item));
                 });
                 hasMore = data.hasMore;
             } else if (currentPage === 1) {
                 // Show no content message only on first page
-                document.getElementById('no-content').classList.remove('hidden');
+                if (noContentElement) noContentElement.classList.remove('hidden');
+                if (mobileNoContentElement) mobileNoContentElement.classList.remove('hidden');
                 hasMore = false;
             }
             
             loading = false;
-            document.getElementById('loading').classList.add('hidden');
+            if (loadingElement) loadingElement.classList.add('hidden');
+            if (mobileLoadingElement) mobileLoadingElement.classList.add('hidden');
         })
         .catch(error => {
             console.error('Error loading feed:', error);
             loading = false;
-            document.getElementById('loading').classList.add('hidden');
+            if (loadingElement) loadingElement.classList.add('hidden');
+            if (mobileLoadingElement) mobileLoadingElement.classList.add('hidden');
             
             if (currentPage === 1) {
-                const noContentDiv = document.getElementById('no-content');
-                noContentDiv.classList.remove('hidden');
-                // Update the message to show the error
-                noContentDiv.innerHTML = `
+                const errorMessage = `
                     <i class="fas fa-exclamation-triangle text-red-400 text-4xl mb-4"></i>
                     <p class="text-red-500 text-lg">Error loading content</p>
                     <p class="text-gray-400 text-sm">Please refresh the page or try again later</p>
                 `;
+                if (noContentElement) {
+                    noContentElement.classList.remove('hidden');
+                    noContentElement.innerHTML = errorMessage;
+                }
+                if (mobileNoContentElement) {
+                    mobileNoContentElement.classList.remove('hidden');
+                    mobileNoContentElement.innerHTML = errorMessage;
+                }
             }
         });
 }

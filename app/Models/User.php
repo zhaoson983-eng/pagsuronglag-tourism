@@ -7,6 +7,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Business;
+use App\Models\Order;
 
 class User extends Authenticatable
 {
@@ -95,6 +96,85 @@ class User extends Authenticatable
         return $this->hasMany(BusinessProfile::class, 'approved_by');
     }
     
+    /**
+     * Get all messages sent by the user.
+     */
+    public function sentMessages()
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    /**
+     * Get all messages received by the user.
+     */
+    public function receivedMessages()
+    {
+        return $this->hasMany(Message::class, 'receiver_id');
+    }
+
+    /**
+     * Get all messages (both sent and received) for the user.
+     */
+    public function allMessages()
+    {
+        return Message::where(function($query) {
+            $query->where('sender_id', $this->id)
+                  ->orWhere('receiver_id', $this->id);
+        });
+    }
+    
+    /**
+     * Get all threads (conversations) for the user.
+     */
+    public function threads()
+    {
+        // Get all unique user IDs that the current user has messaged with
+        $sentTo = $this->sentMessages()->select('receiver_id as user_id');
+        $receivedFrom = $this->receivedMessages()->select('sender_id as user_id');
+        
+        $userIds = $sentTo->union($receivedFrom)->pluck('user_id')->unique();
+        
+        // Return users with their last message
+        return User::whereIn('id', $userIds)
+            ->with(['sentMessages' => function($query) {
+                $query->where('receiver_id', $this->id)
+                    ->orWhere('sender_id', $this->id)
+                    ->latest()
+                    ->limit(1);
+            }, 'receivedMessages' => function($query) {
+                $query->where('receiver_id', $this->id)
+                    ->orWhere('sender_id', $this->id)
+                    ->latest()
+                    ->limit(1);
+            }])
+            ->get()
+            ->map(function($user) {
+                $lastSent = $user->sentMessages->first();
+                $lastReceived = $user->receivedMessages->first();
+                
+                // Get the most recent message between the two users
+                if ($lastSent && $lastReceived) {
+                    $lastMessage = $lastSent->created_at->gt($lastReceived->created_at) ? $lastSent : $lastReceived;
+                } else {
+                    $lastMessage = $lastSent ?? $lastReceived;
+                }
+                
+                $user->last_message = $lastMessage;
+                $user->last_message_time = $lastMessage ? $lastMessage->created_at : now();
+                return $user;
+            })
+            ->sortByDesc('last_message_time');
+    }
+    
+    /**
+     * Get unread messages count.
+     */
+    public function unreadMessages()
+    {
+        return $this->hasMany(Message::class, 'receiver_id')
+            ->whereNull('read_at');
+    }
+    
     // Scopes
     public function scopeActive($query)
     {
@@ -117,6 +197,14 @@ class User extends Authenticatable
     }
     
     // Role Checks
+    /**
+     * Get all orders for the user.
+     */
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+    
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
@@ -193,21 +281,6 @@ class User extends Authenticatable
     public function business()
     {
         return $this->hasOne(Business::class, 'owner_id');
-    }
-
-    public function sentMessages()
-    {
-        return $this->hasMany(Message::class, 'sender_id');
-    }
-
-    public function receivedMessages()
-    {
-        return $this->hasMany(Message::class, 'receiver_id');
-    }
-
-    public function unreadMessages()
-    {
-        return $this->hasMany(Message::class, 'receiver_id')->whereNull('read_at');
     }
 
     public function cart()

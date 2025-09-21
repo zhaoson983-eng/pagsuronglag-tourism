@@ -38,94 +38,93 @@
 </div>
 
 <!-- Main Content -->
-<div class="max-w-7xl mx-auto px-4 -mt-20 relative z-10 pb-6">
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <!-- Left Sidebar - Business Profile -->
-        <div class="lg:col-span-1">
-            <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
-                <!-- Business Avatar -->
-                <div class="text-center mb-6">
-                    <div class="w-32 h-32 mx-auto rounded-full bg-gray-100 flex items-center justify-center mb-4 relative">
-                        @if($business->businessProfile && $business->businessProfile->profile_avatar)
-                            <img src="{{ Storage::url($business->businessProfile->profile_avatar) }}" alt="{{ $business->name }}" class="w-full h-full rounded-full object-cover">
-                        @elseif($business->businessProfile && $business->businessProfile->logo)
-                            <img src="{{ Storage::url($business->businessProfile->logo) }}" alt="{{ $business->name }}" class="w-full h-full rounded-full object-cover">
-                        @else
-                            <i class="fas fa-store text-4xl text-blue-500"></i>
-                        @endif
-                        <div class="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center">
-                            <i class="fas fa-check text-sm"></i>
-                        </div>
+<div class="px-6 -mt-20 relative z-10 pb-6">
+    <!-- Business Profile Header -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+        <div class="flex flex-col lg:flex-row items-center lg:items-start gap-6">
+            <!-- Business Avatar -->
+            <div class="flex-shrink-0 text-center lg:text-left">
+                <div class="w-32 h-32 mx-auto lg:mx-0 rounded-full bg-gray-100 flex items-center justify-center mb-4 relative">
+                    @if($business->businessProfile && $business->businessProfile->profile_avatar)
+                        <img src="{{ Storage::url($business->businessProfile->profile_avatar) }}" alt="{{ $business->name }}" class="w-full h-full rounded-full object-cover">
+                    @elseif($business->businessProfile && $business->businessProfile->logo)
+                        <img src="{{ Storage::url($business->businessProfile->logo) }}" alt="{{ $business->name }}" class="w-full h-full rounded-full object-cover">
+                    @else
+                        <i class="fas fa-store text-4xl text-blue-500"></i>
+                    @endif
+                    <div class="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center">
+                        <i class="fas fa-check text-sm"></i>
                     </div>
-                    <h1 class="text-2xl font-bold text-gray-800 mb-2">{{ $business->name }}</h1>
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 mb-4">
-                        <i class="fas fa-check-circle mr-1"></i>
-                        Available Now
-                    </span>
                 </div>
-
+            </div>
+            
+            <!-- Business Info -->
+            <div class="flex-1 text-center lg:text-left">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ $business->name }}</h1>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 mb-4">
+                    <i class="fas fa-check-circle mr-1"></i>
+                    Available Now
+                </span>
+                
                 <!-- Contact Info -->
-                <div class="space-y-3 mb-6">
+                <div class="flex flex-col lg:flex-row lg:items-center gap-4 mb-4">
                     @if($business->businessProfile && $business->businessProfile->location)
-                        <div class="flex items-center text-gray-600">
-                            <i class="fas fa-map-marker-alt w-5 mr-3"></i>
+                        <div class="flex items-center justify-center lg:justify-start text-gray-600">
+                            <i class="fas fa-map-marker-alt w-5 mr-2"></i>
                             <span class="text-sm">{{ $business->businessProfile->location }}</span>
                         </div>
                     @elseif($business->address)
-                        <div class="flex items-center text-gray-600">
-                            <i class="fas fa-map-marker-alt w-5 mr-3"></i>
+                        <div class="flex items-center justify-center lg:justify-start text-gray-600">
+                            <i class="fas fa-map-marker-alt w-5 mr-2"></i>
                             <span class="text-sm">{{ $business->address }}</span>
                         </div>
                     @endif
                     @if($business->contact_number)
-                        <div class="flex items-center text-gray-600">
-                            <i class="fas fa-phone w-5 mr-3"></i>
+                        <div class="flex items-center justify-center lg:justify-start text-gray-600">
+                            <i class="fas fa-phone w-5 mr-2"></i>
                             <span class="text-sm">{{ $business->contact_number }}</span>
                         </div>
                     @endif
                 </div>
-
+                
                 <!-- Rating Section -->
-                <div class="bg-gray-50 rounded-lg p-3">
-                    <div class="flex items-center justify-center mb-2">
+                <div class="flex items-center justify-center lg:justify-start gap-4">
+                    <div class="flex items-center">
                         @for($i = 1; $i <= 5; $i++)
-                            <svg class="w-4 h-4 {{ $i <= ($business->average_rating ?? 0) ? 'text-yellow-400' : 'text-gray-300' }}" 
+                            <svg class="w-5 h-5 {{ $i <= ($business->average_rating ?? 0) ? 'text-yellow-400' : 'text-gray-300' }}" 
                                  fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                             </svg>
                         @endfor
+                        <span class="ml-2 text-sm font-medium text-gray-700">{{ number_format($business->average_rating ?? 0, 1) }}</span>
                     </div>
-                    <div class="text-center text-xs text-gray-600">
-                        {{ number_format($business->average_rating ?? 0, 1) }}/5 ({{ $business->total_ratings ?? 0 }} ratings)
-                    </div>
+                    <span class="text-sm text-gray-500">({{ $business->total_ratings ?? 0 }} ratings)</span>
                 </div>
-
-                <!-- Description Card -->
-                @if($business->businessProfile && $business->businessProfile->description)
-                    <div class="mt-6 p-4 bg-blue-50 rounded-lg">
-                        <h3 class="font-semibold text-blue-800 mb-2">About This Business</h3>
-                        <p class="text-blue-700 text-sm">{{ $business->businessProfile->description }}</p>
-                    </div>
-                @elseif($business->description)
-                    <div class="mt-6 p-4 bg-blue-50 rounded-lg">
-                        <h3 class="font-semibold text-blue-800 mb-2">About This Business</h3>
-                        <p class="text-blue-700 text-sm">{{ $business->description }}</p>
-                    </div>
-                @endif
             </div>
         </div>
+        
+        <!-- Description -->
+        @if($business->businessProfile && $business->businessProfile->description)
+            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                <h3 class="font-semibold text-blue-800 mb-2">About This Business</h3>
+                <p class="text-blue-700 text-sm">{{ $business->businessProfile->description }}</p>
+            </div>
+        @elseif($business->description)
+            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                <h3 class="font-semibold text-blue-800 mb-2">About This Business</h3>
+                <p class="text-blue-700 text-sm">{{ $business->description }}</p>
+            </div>
+        @endif
+    </div>
+    <!-- Products Section -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-semibold text-gray-800">Products</h2>
+        </div>
 
-        <!-- Right Content Area -->
-        <div class="lg:col-span-3">
-                <!-- Products Section -->
-                <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-2xl font-semibold text-gray-800">Products</h2>
-                    </div>
-
-                    @if($products && $products->count() > 0)
-                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            @foreach($products as $product)
+        @if($products && $products->count() > 0)
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+                @foreach($products as $product)
                                 <div class="border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow duration-200 bg-white">
                                     <!-- Product Image -->
                                     <div class="h-32 sm:h-40 bg-gray-100 flex items-center justify-center relative">
@@ -259,26 +258,26 @@
                     @endif
                 </div>
 
-                <!-- Gallery Section -->
-                @if($business->businessProfile && $business->businessProfile->galleries && $business->businessProfile->galleries->count() > 0)
-                    <div class="bg-white rounded-2xl shadow-lg p-6">
-                        <h2 class="text-xl font-semibold text-gray-800 mb-6">Gallery</h2>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            @foreach($business->businessProfile->galleries as $gallery)
-                                <div class="aspect-square bg-gray-100 rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-                                     onclick="openImageModal('{{ Storage::url($gallery->image_path) }}')">
-                                    <img src="{{ Storage::url($gallery->image_path) }}" 
-                                         alt="Gallery Image" 
-                                         class="w-full h-full object-cover hover:scale-105 transition-transform duration-300">
-                                </div>
-                            @endforeach
-                        </div>
+    <!-- Gallery Section -->
+    @if($business->businessProfile && $business->businessProfile->galleries && $business->businessProfile->galleries->count() > 0)
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-6">Gallery</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                @foreach($business->businessProfile->galleries as $gallery)
+                    <div class="aspect-square bg-gray-100 rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                         onclick="openImageModal('{{ Storage::url($gallery->image_path) }}')">
+                        <img src="{{ Storage::url($gallery->image_path) }}" 
+                             alt="Gallery Image" 
+                             class="w-full h-full object-cover hover:scale-105 transition-transform duration-300">
                     </div>
-                @endif
+                @endforeach
+            </div>
+        </div>
+    @endif
 
-                <!-- Reviews & Comments Section -->
-                <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Reviews & Comments</h2>
+    <!-- Reviews & Comments Section -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Reviews & Comments</h2>
                     
                     <!-- Rating Summary -->
                     <div class="flex items-center mb-6 p-4 bg-gray-50 rounded-lg">
@@ -380,8 +379,6 @@
                         </div>
                     @endif
                 </div>
-            </div>
-        </div>
     </div>
 </div>
 

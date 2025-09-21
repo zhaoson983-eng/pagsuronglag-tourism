@@ -1,62 +1,38 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="min-h-screen bg-gray-50">
-    <!-- Category Cards Section -->
-    <div class="px-4 py-6 bg-white">
-        <!-- Mobile: 4 columns, Desktop: 4 columns centered -->
-        <div class="grid grid-cols-4 gap-4 md:max-w-2xl md:mx-auto">
-            <!-- Products & Shops -->
-            <a href="{{ route('customer.products') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
-                <div class="w-12 h-12 md:w-16 md:h-16 bg-blue-500 rounded-full flex items-center justify-center mb-2">
-                    <i class="fas fa-shopping-basket text-white text-lg md:text-xl"></i>
-                </div>
-                <span class="text-xs md:text-sm font-medium text-gray-700 text-center leading-tight">Products & Shops</span>
-            </a>
-
-            <!-- Hotels - Active -->
-            <a href="{{ route('customer.hotels') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-100 border-2 border-blue-300 transition-colors">
-                <div class="w-12 h-12 md:w-16 md:h-16 bg-blue-600 rounded-full flex items-center justify-center mb-2">
-                    <i class="fas fa-hotel text-white text-lg md:text-xl"></i>
-                </div>
-                <span class="text-xs md:text-sm font-medium text-blue-700 text-center leading-tight">Hotels</span>
-            </a>
-
-            <!-- Resorts -->
-            <a href="{{ route('customer.resorts') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
-                <div class="w-12 h-12 md:w-16 md:h-16 bg-blue-500 rounded-full flex items-center justify-center mb-2">
-                    <i class="fas fa-umbrella-beach text-white text-lg md:text-xl"></i>
-                </div>
-                <span class="text-xs md:text-sm font-medium text-gray-700 text-center leading-tight">Resorts</span>
-            </a>
-
-            <!-- Attractions -->
-            <a href="{{ route('customer.attractions') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
-                <div class="w-12 h-12 md:w-16 md:h-16 bg-blue-500 rounded-full flex items-center justify-center mb-2">
-                    <i class="fas fa-map-marked-alt text-white text-lg md:text-xl"></i>
-                </div>
-                <span class="text-xs md:text-sm font-medium text-gray-700 text-center leading-tight">Attractions</span>
-            </a>
+<!-- Desktop Layout -->
+<div class="hidden lg:block">
+    <!-- Page Header -->
+    <div class="bg-white border-b border-gray-200 px-6 py-6">
+        <div class="text-center">
+            <h1 class="text-2xl font-bold text-gray-900 mb-2 flex items-center justify-center">
+                <i class="fas fa-hotel mr-3 text-blue-600"></i>
+                Hotels
+            </h1>
+            <p class="text-gray-600 max-w-2xl mx-auto">Find comfortable accommodations in Lagonoy</p>
         </div>
-
-        <!-- Search Bar -->
-        <div class="mt-6 max-w-2xl mx-auto">
-            <form action="{{ route('customer.search') }}" method="GET" class="flex gap-2">
+    </div>
+    
+    <!-- Search Bar -->
+    <div class="bg-white border-b border-gray-200 px-6 py-4">
+        <form action="{{ route('customer.search') }}" method="GET" class="max-w-2xl mx-auto">
+            <div class="flex gap-2">
                 <input type="text"
                        name="q"
                        value="{{ request('q') }}"
-                       placeholder="Search for products, businesses, or tourist spots..."
+                       placeholder="Search for hotels..."
                        class="flex-1 px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800">
                 <button type="submit" class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors">
                     <i class="fas fa-search"></i> Search
                 </button>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
-
+    
     <!-- Feed Section -->
-    <div class="px-4 py-2 max-w-2xl mx-auto">
-        <div id="feed-container" class="space-y-4">
+    <div class="px-6 py-6">
+        <div id="feed-container" class="space-y-6 max-w-2xl mx-auto">
             <!-- Feed items will be loaded here -->
         </div>
         
@@ -68,6 +44,80 @@
         
         <!-- No content message -->
         <div id="no-content" class="text-center py-12 hidden">
+            <i class="fas fa-hotel text-gray-400 text-4xl mb-4"></i>
+            <p class="text-gray-500 text-lg">No hotels available at the moment</p>
+            <p class="text-gray-400 text-sm">Check back later for amazing places to stay!</p>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Layout -->
+<div class="lg:hidden">
+    <!-- Category Cards Section -->
+    <div class="px-4 py-6 bg-white">
+        <div class="grid grid-cols-4 gap-4">
+            <!-- Products & Shops -->
+            <a href="{{ route('customer.products') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
+                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mb-2">
+                    <i class="fas fa-shopping-basket text-white text-lg"></i>
+                </div>
+                <span class="text-xs font-medium text-gray-700 text-center leading-tight">Products & Shops</span>
+            </a>
+
+            <!-- Hotels - Active -->
+            <a href="{{ route('customer.hotels') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-100 border-2 border-blue-300 transition-colors">
+                <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mb-2">
+                    <i class="fas fa-hotel text-white text-lg"></i>
+                </div>
+                <span class="text-xs font-medium text-blue-700 text-center leading-tight">Hotels</span>
+            </a>
+
+            <!-- Resorts -->
+            <a href="{{ route('customer.resorts') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
+                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mb-2">
+                    <i class="fas fa-umbrella-beach text-white text-lg"></i>
+                </div>
+                <span class="text-xs font-medium text-gray-700 text-center leading-tight">Resorts</span>
+            </a>
+
+            <!-- Attractions -->
+            <a href="{{ route('customer.attractions') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
+                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mb-2">
+                    <i class="fas fa-map-marked-alt text-white text-lg"></i>
+                </div>
+                <span class="text-xs font-medium text-gray-700 text-center leading-tight">Attractions</span>
+            </a>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="mt-6">
+            <form action="{{ route('customer.search') }}" method="GET" class="flex gap-2">
+                <input type="text"
+                       name="q"
+                       value="{{ request('q') }}"
+                       placeholder="Search for hotels..."
+                       class="flex-1 px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800">
+                <button type="submit" class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Mobile Feed Section -->
+    <div class="px-4 py-2">
+        <div id="mobile-feed-container" class="space-y-4">
+            <!-- Feed items will be loaded here -->
+        </div>
+        
+        <!-- Loading indicator -->
+        <div id="mobile-loading" class="text-center py-8 hidden">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            <p class="mt-2 text-gray-500">Loading more...</p>
+        </div>
+        
+        <!-- No content message -->
+        <div id="mobile-no-content" class="text-center py-12 hidden">
             <i class="fas fa-hotel text-gray-400 text-4xl mb-4"></i>
             <p class="text-gray-500 text-lg">No hotels available at the moment</p>
             <p class="text-gray-400 text-sm">Check back later for amazing places to stay!</p>
