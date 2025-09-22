@@ -224,7 +224,7 @@ class CustomerController extends Controller
                 'user_liked' => $userLiked,
                 'user_rating' => $userRating ? $userRating->rating : 0,
                 'status' => 'Published',
-                'url' => route('customer.product.show', $product->id),
+                'url' => route('customer.business.show', $product->business_id),
                 'created_at' => $product->created_at
             ]);
         }

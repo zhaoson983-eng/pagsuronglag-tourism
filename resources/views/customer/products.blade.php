@@ -53,56 +53,18 @@
 
 <!-- Mobile Layout -->
 <div class="lg:hidden">
-    <!-- Category Cards Section -->
+    <!-- Search Bar -->
     <div class="px-4 py-6 bg-white">
-        <!-- Mobile: 4 columns, Desktop: 4 columns centered -->
-        <div class="grid grid-cols-4 gap-4">
-            <!-- Products & Shops - Active -->
-            <a href="{{ route('customer.products') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-100 border-2 border-blue-300 transition-colors">
-                <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mb-2">
-                    <i class="fas fa-shopping-basket text-white text-lg"></i>
-                </div>
-                <span class="text-xs font-medium text-blue-700 text-center leading-tight">Products & Shops</span>
-            </a>
-
-            <!-- Hotels -->
-            <a href="{{ route('customer.hotels') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
-                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mb-2">
-                    <i class="fas fa-hotel text-white text-lg"></i>
-                </div>
-                <span class="text-xs font-medium text-gray-700 text-center leading-tight">Hotels</span>
-            </a>
-
-            <!-- Resorts -->
-            <a href="{{ route('customer.resorts') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
-                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mb-2">
-                    <i class="fas fa-umbrella-beach text-white text-lg"></i>
-                </div>
-                <span class="text-xs font-medium text-gray-700 text-center leading-tight">Resorts</span>
-            </a>
-
-            <!-- Attractions -->
-            <a href="{{ route('customer.attractions') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
-                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mb-2">
-                    <i class="fas fa-map-marked-alt text-white text-lg"></i>
-                </div>
-                <span class="text-xs font-medium text-gray-700 text-center leading-tight">Attractions</span>
-            </a>
-        </div>
-
-        <!-- Search Bar -->
-        <div class="mt-6">
-            <form action="{{ route('customer.search') }}" method="GET" class="flex gap-2">
-                <input type="text"
-                       name="q"
-                       value="{{ request('q') }}"
-                       placeholder="Search for products and shops..."
-                       class="flex-1 px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800">
-                <button type="submit" class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors">
-                    <i class="fas fa-search"></i> Search
-                </button>
-            </form>
-        </div>
+        <form action="{{ route('customer.search') }}" method="GET" class="flex gap-2">
+            <input type="text"
+                   name="q"
+                   value="{{ request('q') }}"
+                   placeholder="Search for products and shops..."
+                   class="flex-1 px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800">
+            <button type="submit" class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors">
+                <i class="fas fa-search"></i> Search
+            </button>
+        </form>
     </div>
 
     <!-- Mobile Feed Section -->
@@ -275,7 +237,7 @@ function createFeedItem(item) {
     
     const typeLabels = {
         'business': 'Shop',
-        'product': 'Product'
+        'product': 'Shop'
     };
     
     if (item.type === 'business') {

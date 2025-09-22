@@ -61,7 +61,7 @@
             <h2 class="text-lg font-semibold text-gray-900">Order Summary</h2>
             <div class="text-right">
                 <div class="text-sm text-gray-500">Total Items: {{ $order->orderItems->sum('quantity') }}</div>
-                <div class="text-lg font-bold text-orange-600">Total Amount: ₱{{ number_format($order->total_amount, 2) }}</div>
+                <div class="text-lg font-bold text-orange-600">Total Amount: ₱{{ number_format($order->total_amount ?? $order->total ?? $order->orderItems->sum(function($item) { return $item->quantity * $item->price; }), 2) }}</div>
             </div>
         </div>
         
@@ -94,7 +94,7 @@
         <div class="border-t border-gray-200 mt-6 pt-4">
             <div class="flex justify-between items-center">
                 <span class="text-lg font-semibold text-gray-900">Total:</span>
-                <span class="text-xl font-bold text-orange-600">₱{{ number_format($order->total_amount, 2) }}</span>
+                <span class="text-xl font-bold text-orange-600">₱{{ number_format($order->total_amount ?? $order->total ?? $order->orderItems->sum(function($item) { return $item->quantity * $item->price; }), 2) }}</span>
             </div>
         </div>
     </div>

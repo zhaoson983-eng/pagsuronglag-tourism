@@ -52,7 +52,28 @@
 
     <!-- Header -->
     <header style="background-color: #012844ff;" class="text-white shadow-md fixed w-full top-0 left-0 right-0 z-50">
-        <!-- Mobile Header -->
+        <!-- Mobile Top Header -->
+        <div class="md:hidden px-4 py-3 flex items-center justify-between">
+            <img src="{{ asset('logo.png') }}" alt="Pagsurong Lagonoy Logo" class="w-8 h-auto">
+            
+            <!-- Mobile Category Navigation -->
+            <div class="flex items-center space-x-4 text-xs">
+                <a href="{{ route('customer.products') }}" class="text-white hover:text-blue-200 transition-colors {{ request()->routeIs('customer.products') ? 'font-semibold' : '' }}">
+                    Products
+                </a>
+                <a href="{{ route('customer.hotels') }}" class="text-white hover:text-blue-200 transition-colors {{ request()->routeIs('customer.hotels') ? 'font-semibold' : '' }}">
+                    Hotels
+                </a>
+                <a href="{{ route('customer.resorts') }}" class="text-white hover:text-blue-200 transition-colors {{ request()->routeIs('customer.resorts') ? 'font-semibold' : '' }}">
+                    Resorts
+                </a>
+                <a href="{{ route('customer.attractions') }}" class="text-white hover:text-blue-200 transition-colors {{ request()->routeIs('customer.attractions') ? 'font-semibold' : '' }}">
+                    Attractions
+                </a>
+            </div>
+        </div>
+        
+        <!-- Mobile Bottom Navigation -->
     <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
         <div class="flex justify-around items-center py-2">
             @auth
@@ -98,38 +119,18 @@
                         <span>Cart</span>
                     </a>
                     
-                    <div class="relative group">
-                        <button class="flex flex-col items-center px-3 py-2 text-xs text-gray-600 hover:text-blue-500 focus:outline-none">
-                            @if($user->profile && $user->profile->profile_picture)
-                                <img src="{{ Storage::url($user->profile->profile_picture) }}" 
-                                     alt="Profile" 
-                                     class="w-6 h-6 rounded-full object-cover border border-blue-400 mb-1">
-                            @else
-                                <div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs mb-1">
-                                    {{ strtoupper(substr($user->name, 0, 1)) }}
-                                </div>
-                            @endif
-                            <span>Profile</span>
-                        </button>
-                        
-                        <!-- Mobile Profile Dropdown -->
-                        <div class="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-md shadow-lg py-1 opacity-0 invisible group-focus:opacity-100 group-focus:visible transition-all duration-300 z-50">
-                            <a href="{{ route('profile.show') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <i class="fas fa-user mr-2 text-gray-400"></i> My Profile
-                            </a>
-                            <a href="{{ route('profile.edit') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <i class="fas fa-edit mr-2 text-gray-400"></i> Edit Profile
-                            </a>
-                            <hr class="my-1 border-gray-100">
-                            <form method="POST" action="{{ route('logout') }}" id="logout-form-mobile" class="hidden">
-                                @csrf
-                            </form>
-                            <button type="button" onclick="confirmLogout('mobile')" 
-                                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
-                                <i class="fas fa-sign-out-alt mr-2 text-gray-400"></i> Logout
-                            </button>
-                        </div>
-                    </div>
+                    <button onclick="toggleMobileProfileSidebar()" class="flex flex-col items-center px-3 py-2 text-xs text-gray-600 hover:text-blue-500 focus:outline-none">
+                        @if($user->profile && $user->profile->profile_picture)
+                            <img src="{{ Storage::url($user->profile->profile_picture) }}" 
+                                 alt="Profile" 
+                                 class="w-6 h-6 rounded-full object-cover border border-blue-400 mb-1">
+                        @else
+                            <div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs mb-1">
+                                {{ strtoupper(substr($user->name, 0, 1)) }}
+                            </div>
+                        @endif
+                        <span>Profile</span>
+                    </button>
                 @endif
             @endauth
         </div>
@@ -181,16 +182,6 @@
                                 <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300 {{ request()->routeIs('business.my-shop') ? 'w-full' : '' }}"></span>
                             </a>
                         @endif
-                        <a href="{{ route('business.messages') }}" 
-                           class="text-white hover:text-blue-100 transition-all duration-200 relative group {{ request()->routeIs('business.messages') ? 'font-semibold' : '' }}">
-                            <i class="fas fa-envelope mr-1"></i> Messages
-                            @if($unreadMessages)
-                                <span class="absolute -top-2 -right-4 bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                                    {{ $unreadMessages }}
-                                </span>
-                            @endif
-                            <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300 {{ request()->routeIs('business.messages') ? 'w-full' : '' }}"></span>
-                        </a>
                         <a href="{{ route('business.orders') }}" 
                            class="text-white hover:text-blue-100 transition-all duration-200 relative group {{ request()->routeIs('business.orders') ? 'font-semibold' : '' }}">
                             <i class="fas fa-shopping-bag mr-1"></i> Orders
@@ -363,11 +354,11 @@
 
     <!-- Main content wrapper with fixed navigation and three-column layout -->
     <div class="pt-20 md:pt-16 pb-16 md:pb-0 min-h-screen">
-        <div class="flex min-h-[calc(100vh-5rem)]">
+        <div class="flex min-h-[calc(100vh-5rem)] max-h-[calc(100vh-5rem)]">
             <!-- Left Sidebar - Orders Panel (Desktop Only) -->
             @auth
                 @if(auth()->user()->role === 'customer')
-                    <div class="hidden lg:block w-80 bg-white border-r border-gray-200 overflow-y-auto">
+                    <div class="hidden lg:block w-80 bg-white border-r border-gray-200 overflow-y-auto flex-shrink-0">
                         <div class="p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
                             <div class="flex items-center justify-between">
                                 <h3 class="font-semibold text-gray-900 flex items-center">
@@ -398,7 +389,7 @@
                                                 </span>
                                             </div>
                                             <div class="text-xs text-gray-600">
-                                                Total: ₱{{ number_format($order->total_amount, 2) }}
+                                                Total: ₱{{ number_format($order->total_amount ?? $order->total ?? $order->orderItems->sum(function($item) { return $item->quantity * $item->price; }), 2) }}
                                             </div>
                                         </div>
                                     @endforeach
@@ -421,15 +412,15 @@
             @endauth
             
             <!-- Main Content - Feed -->
-            <main id="main-content" class="flex-1 overflow-y-auto bg-gray-50">
+            <main id="main-content" class="flex-1 overflow-y-auto bg-gray-50 pt-16 md:pt-0 pb-16 md:pb-0 min-w-0">
                 @yield('content')
             </main>
             
             <!-- Right Sidebar - Messages Panel -->
             @auth
                 @if(auth()->user()->role === 'customer' || auth()->user()->role === 'business_owner')
-                    <div class="hidden lg:block w-80 bg-white border-l border-gray-200 overflow-y-auto">
-                        <div class="p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+                    <div id="messagesPanel" class="hidden lg:block w-80 bg-white border-l border-gray-200 overflow-y-auto flex-shrink-0 relative z-10">
+                        <div class="p-4 border-b border-gray-200 sticky top-0 bg-white z-20">
                             <div class="flex items-center justify-between">
                                 <h3 class="font-semibold text-gray-900 flex items-center">
                                     <i class="fas fa-envelope mr-2 text-blue-600"></i>
@@ -585,7 +576,14 @@
     <script>
         function confirmLogout(type = 'desktop') {
             if (confirm('Are you sure you want to logout?')) {
-                const formId = type === 'mobile' ? 'logout-form-mobile' : 'logout-form';
+                let formId;
+                if (type === 'mobile') {
+                    formId = 'logout-form-mobile';
+                } else if (type === 'mobile-sidebar') {
+                    formId = 'logout-form-mobile-sidebar';
+                } else {
+                    formId = 'logout-form';
+                }
                 document.getElementById(formId).submit();
             }
         }
@@ -639,6 +637,134 @@
             </style>
         @endif
     @endauth
+    
+    <!-- Mobile Profile Sidebar -->
+    @auth
+        @if(auth()->user()->role === 'customer')
+            <!-- Overlay -->
+            <div id="mobileProfileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden" onclick="closeMobileProfileSidebar()"></div>
+            
+            <!-- Sidebar -->
+            <div id="mobileProfileSidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-xl transform translate-x-full transition-transform duration-300 ease-in-out z-50 md:hidden">
+                <div class="flex flex-col h-full">
+                    <!-- Header -->
+                    <div class="bg-blue-600 text-white p-6">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                @if(auth()->user()->profile && auth()->user()->profile->profile_picture)
+                                    <img src="{{ Storage::url(auth()->user()->profile->profile_picture) }}" 
+                                         alt="Profile" 
+                                         class="w-12 h-12 rounded-full object-cover border-2 border-white">
+                                @else
+                                    <div class="w-12 h-12 rounded-full bg-white bg-opacity-20 flex items-center justify-center text-white text-lg font-semibold">
+                                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                                    </div>
+                                @endif
+                                <div>
+                                    <h3 class="font-semibold text-lg">{{ auth()->user()->name }}</h3>
+                                    <p class="text-blue-100 text-sm">{{ auth()->user()->email }}</p>
+                                </div>
+                            </div>
+                            <button onclick="closeMobileProfileSidebar()" class="text-white hover:text-blue-200 transition-colors">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Menu Items -->
+                    <div class="flex-1 py-4">
+                        <a href="{{ route('profile.show') }}" class="flex items-center px-6 py-4 text-gray-700 hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-user mr-4 text-blue-600 w-5"></i>
+                            <span class="font-medium">My Profile</span>
+                        </a>
+                        <a href="{{ route('profile.edit') }}" class="flex items-center px-6 py-4 text-gray-700 hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-edit mr-4 text-blue-600 w-5"></i>
+                            <span class="font-medium">Edit Profile</span>
+                        </a>
+                        <a href="{{ route('customer.orders') }}" class="flex items-center px-6 py-4 text-gray-700 hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-shopping-bag mr-4 text-blue-600 w-5"></i>
+                            <span class="font-medium">My Orders</span>
+                        </a>
+                        <a href="{{ route('customer.messages') }}" class="flex items-center px-6 py-4 text-gray-700 hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-envelope mr-4 text-blue-600 w-5"></i>
+                            <span class="font-medium">Messages</span>
+                        </a>
+                        <div class="border-t border-gray-200 my-2"></div>
+                        <a href="#" class="flex items-center px-6 py-4 text-gray-700 hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-cog mr-4 text-blue-600 w-5"></i>
+                            <span class="font-medium">Settings</span>
+                        </a>
+                        <a href="#" class="flex items-center px-6 py-4 text-gray-700 hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-question-circle mr-4 text-blue-600 w-5"></i>
+                            <span class="font-medium">Help & Support</span>
+                        </a>
+                    </div>
+                    
+                    <!-- Logout Button -->
+                    <div class="border-t border-gray-200 p-4">
+                        <form method="POST" action="{{ route('logout') }}" id="logout-form-mobile-sidebar" class="hidden">
+                            @csrf
+                        </form>
+                        <button type="button" onclick="confirmLogout('mobile-sidebar')" 
+                                class="w-full flex items-center px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                            <i class="fas fa-sign-out-alt mr-4 w-5"></i>
+                            <span class="font-medium">Logout</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        @endif
+    @endauth
+    
+    <!-- Mobile Profile Sidebar JavaScript -->
+    <script>
+        function toggleMobileProfileSidebar() {
+            const sidebar = document.getElementById('mobileProfileSidebar');
+            const overlay = document.getElementById('mobileProfileOverlay');
+            
+            if (sidebar && overlay) {
+                const isOpen = !sidebar.classList.contains('translate-x-full');
+                
+                if (isOpen) {
+                    closeMobileProfileSidebar();
+                } else {
+                    openMobileProfileSidebar();
+                }
+            }
+        }
+        
+        function openMobileProfileSidebar() {
+            const sidebar = document.getElementById('mobileProfileSidebar');
+            const overlay = document.getElementById('mobileProfileOverlay');
+            
+            if (sidebar && overlay) {
+                overlay.classList.remove('hidden');
+                sidebar.classList.remove('translate-x-full');
+                document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            }
+        }
+        
+        function closeMobileProfileSidebar() {
+            const sidebar = document.getElementById('mobileProfileSidebar');
+            const overlay = document.getElementById('mobileProfileOverlay');
+            
+            if (sidebar && overlay) {
+                sidebar.classList.add('translate-x-full');
+                overlay.classList.add('hidden');
+                document.body.style.overflow = ''; // Restore scrolling
+            }
+        }
+        
+        // Close sidebar when clicking on links (except logout)
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarLinks = document.querySelectorAll('#mobileProfileSidebar a[href]:not([href="#"])');
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    closeMobileProfileSidebar();
+                });
+            });
+        });
+    </script>
     
     <!-- Rating System -->
     <script src="{{ asset('js/ratings.js') }}"></script>

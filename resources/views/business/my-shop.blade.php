@@ -310,10 +310,16 @@ use Illuminate\Support\Facades\Storage;
                                         <div class="text-sm font-medium text-gray-900">
                                             {{ $product->order_items_count }} {{ Str::plural('sale', $product->order_items_count) }}
                                         </div>
-                                        <button onclick="editProductStock({{ $product->id }}, {{ $product->current_stock ?? 0 }}, {{ $product->stock_limit ?? 0 }})" 
-                                                class="text-xs text-blue-600 hover:text-blue-800 mt-1">
-                                            Edit Stock
-                                        </button>
+                                        <div class="flex flex-col gap-1 mt-1">
+                                            <button onclick="editProductStock({{ $product->id }}, {{ $product->current_stock ?? 0 }}, {{ $product->stock_limit ?? 0 }})" 
+                                                    class="text-xs text-blue-600 hover:text-blue-800">
+                                                Edit Stock
+                                            </button>
+                                            <button onclick="deleteProduct({{ $product->id }}, '{{ $product->name }}')" 
+                                                    class="text-xs text-red-600 hover:text-red-800">
+                                                <i class="fas fa-trash mr-1"></i>Delete
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             @endforeach
@@ -789,6 +795,57 @@ function editProductStock(productId, currentStock, stockLimit) {
 
 function closeStockModal() {
     document.getElementById('stockEditModal').classList.add('hidden');
+}
+
+function deleteProduct(productId, productName) {
+    if (confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone.`)) {
+        fetch(`{{ url('/business/products') }}/${productId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                showNotification('Product deleted successfully!', 'success');
+                // Reload the page to update the product list
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                showNotification(data.message || 'Error deleting product', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error deleting product', 'error');
+        });
+    }
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in-up ${
+        type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+    }`;
+    notification.innerHTML = `
+        <div class="flex items-center">
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    document.body.appendChild(notification);
+    
+    // Auto-remove notification after 3 seconds
+    setTimeout(() => {
+        notification.style.transition = 'opacity 0.3s ease-out';
+        notification.style.opacity = '0';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
 }
 </script>
 

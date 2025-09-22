@@ -6,10 +6,12 @@ use App\Models\BusinessProfile;
 use App\Models\Room;
 use App\Models\ResortRoom;
 use App\Models\Cottage;
+use App\Models\Product;
 use App\Policies\BusinessProfilePolicy;
 use App\Policies\RoomPolicy;
 use App\Policies\ResortRoomPolicy;
 use App\Policies\CottagePolicy;
+use App\Policies\ProductPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 
@@ -25,6 +27,7 @@ class AuthServiceProvider extends ServiceProvider
         Room::class => RoomPolicy::class,
         ResortRoom::class => ResortRoomPolicy::class,
         Cottage::class => CottagePolicy::class,
+        Product::class => ProductPolicy::class,
     ];
 
     /**

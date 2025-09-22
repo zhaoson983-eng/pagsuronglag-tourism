@@ -108,8 +108,8 @@
         </div>
     </div>
     
-    <!-- Mobile Categories -->
-    <div class="px-4 pb-4 bg-white border-b border-gray-200">
+    <!-- Mobile Categories - Hidden since moved to header -->
+    <div class="hidden px-4 pb-4 bg-white border-b border-gray-200">
         <div class="flex overflow-x-auto pb-2 space-x-2">
             <a href="{{ route('customer.products') }}" class="flex-shrink-0 inline-flex items-center px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-full text-sm font-medium transition-colors">
                 <i class="fas fa-shopping-basket mr-2"></i>
@@ -327,7 +327,7 @@ function createFeedItem(item) {
         'hotel': 'Hotel',
         'resort': 'Resort',
         'attraction': 'Attraction',
-        'product': 'Product'
+        'product': 'Shop'
     };
     
     const imageSection = item.image ? 

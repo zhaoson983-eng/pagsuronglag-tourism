@@ -53,55 +53,18 @@
 
 <!-- Mobile Layout -->
 <div class="lg:hidden">
-    <!-- Category Cards Section -->
+    <!-- Search Bar -->
     <div class="px-4 py-6 bg-white">
-        <div class="grid grid-cols-4 gap-4">
-            <!-- Products & Shops -->
-            <a href="{{ route('customer.products') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
-                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mb-2">
-                    <i class="fas fa-shopping-basket text-white text-lg"></i>
-                </div>
-                <span class="text-xs font-medium text-gray-700 text-center leading-tight">Products & Shops</span>
-            </a>
-
-            <!-- Hotels -->
-            <a href="{{ route('customer.hotels') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
-                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mb-2">
-                    <i class="fas fa-hotel text-white text-lg"></i>
-                </div>
-                <span class="text-xs font-medium text-gray-700 text-center leading-tight">Hotels</span>
-            </a>
-
-            <!-- Resorts -->
-            <a href="{{ route('customer.resorts') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
-                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mb-2">
-                    <i class="fas fa-umbrella-beach text-white text-lg"></i>
-                </div>
-                <span class="text-xs font-medium text-gray-700 text-center leading-tight">Resorts</span>
-            </a>
-
-            <!-- Attractions - Active -->
-            <a href="{{ route('customer.attractions') }}" class="flex flex-col items-center p-4 rounded-xl bg-blue-100 border-2 border-blue-300 transition-colors">
-                <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mb-2">
-                    <i class="fas fa-map-marked-alt text-white text-lg"></i>
-                </div>
-                <span class="text-xs font-medium text-blue-700 text-center leading-tight">Attractions</span>
-            </a>
-        </div>
-
-        <!-- Search Bar -->
-        <div class="mt-6">
-            <form action="{{ route('customer.search') }}" method="GET" class="flex gap-2">
-                <input type="text"
-                       name="q"
-                       value="{{ request('q') }}"
-                       placeholder="Search for attractions..."
-                       class="flex-1 px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800">
-                <button type="submit" class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors">
-                    <i class="fas fa-search"></i> Search
-                </button>
-            </form>
-        </div>
+        <form action="{{ route('customer.search') }}" method="GET" class="flex gap-2">
+            <input type="text"
+                   name="q"
+                   value="{{ request('q') }}"
+                   placeholder="Search for attractions..."
+                   class="flex-1 px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800">
+            <button type="submit" class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors">
+                <i class="fas fa-search"></i> Search
+            </button>
+        </form>
     </div>
 
     <!-- Mobile Feed Section -->
@@ -179,11 +142,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function loadFeedData() {
     if (loading) return;
-    
+
     loading = true;
-    document.getElementById('loading').classList.remove('hidden');
-    document.getElementById('no-content').classList.add('hidden');
-    
+
+    // Check if we're on mobile or desktop
+    const isMobile = window.innerWidth < 1024; // lg breakpoint
+    const containerId = isMobile ? 'mobile-feed-container' : 'feed-container';
+    const loadingId = isMobile ? 'mobile-loading' : 'loading';
+    const noContentId = isMobile ? 'mobile-no-content' : 'no-content';
+
+    document.getElementById(loadingId).classList.remove('hidden');
+    document.getElementById(noContentId).classList.add('hidden');
+
     fetch(`/customer/attractions/feed?page=${currentPage}`, {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
@@ -199,12 +169,12 @@ function loadFeedData() {
         })
         .then(data => {
             console.log('Feed data received:', data);
-            const container = document.getElementById('feed-container');
-            
+            const container = document.getElementById(containerId);
+
             if (currentPage === 1) {
                 container.innerHTML = '';
             }
-            
+
             if (data.items && data.items.length > 0) {
                 data.items.forEach(item => {
                     container.appendChild(createFeedItem(item));
@@ -212,20 +182,20 @@ function loadFeedData() {
                 hasMore = data.hasMore;
             } else if (currentPage === 1) {
                 // Show no content message only on first page
-                document.getElementById('no-content').classList.remove('hidden');
+                document.getElementById(noContentId).classList.remove('hidden');
                 hasMore = false;
             }
-            
+
             loading = false;
-            document.getElementById('loading').classList.add('hidden');
+            document.getElementById(loadingId).classList.add('hidden');
         })
         .catch(error => {
             console.error('Error loading feed:', error);
             loading = false;
-            document.getElementById('loading').classList.add('hidden');
-            
+            document.getElementById(loadingId).classList.add('hidden');
+
             if (currentPage === 1) {
-                const noContentDiv = document.getElementById('no-content');
+                const noContentDiv = document.getElementById(noContentId);
                 noContentDiv.classList.remove('hidden');
                 // Update the message to show the error
                 noContentDiv.innerHTML = `

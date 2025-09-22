@@ -202,8 +202,29 @@ class ProductController extends Controller
     public function destroy(Product $product)
     {
         $this->authorize('delete', $product);
-        $product->delete();
-        return back()->with('success', 'Product deleted.');
+        
+        try {
+            $product->delete();
+            
+            // Return JSON response for AJAX requests
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Product deleted successfully!'
+                ]);
+            }
+            
+            return back()->with('success', 'Product deleted successfully!');
+        } catch (\Exception $e) {
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error deleting product: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return back()->with('error', 'Error deleting product.');
+        }
     }
 
     /**
@@ -346,7 +367,7 @@ class ProductController extends Controller
                 'user_liked' => $userLiked,
                 'user_rating' => $userRating ? $userRating->rating : 0,
                 'status' => 'Published',
-                'url' => route('customer.product.show', $product->id),
+                'url' => route('customer.business.show', $product->business_id),
                 'created_at' => $product->created_at,
                 'price' => $product->price,
                 'description' => $product->description ?? '',
