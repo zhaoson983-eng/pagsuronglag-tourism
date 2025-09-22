@@ -29,15 +29,22 @@ class BusinessController extends Controller
     public function setup()
     {
         $user = auth()->user();
-        
-        // If user already has a business profile, redirect to my-shop
+
+        // If user already has a business profile, redirect to appropriate page based on business type
         if ($user->businessProfile) {
-            return redirect()->route('business.my-shop');
+            switch ($user->businessProfile->business_type) {
+                case 'hotel':
+                    return redirect()->route('business.my-hotel');
+                case 'resort':
+                    return redirect()->route('business.my-resort');
+                default:
+                    return redirect()->route('business.my-shop');
+            }
         }
-        
+
         // Get business type from user or session
         $businessType = $user->business_type ?? session('business_type', 'local_products');
-        
+
         // Route to appropriate setup view based on business type
         switch ($businessType) {
             case 'hotel':
@@ -73,9 +80,16 @@ class BusinessController extends Controller
 
         $user = auth()->user();
         
-        // If user already has a business profile, redirect to my-shop
+        // If user already has a business profile, redirect to appropriate page based on business type
         if ($user->businessProfile) {
-            return redirect()->route('business.my-shop');
+            switch ($user->businessProfile->business_type) {
+                case 'hotel':
+                    return redirect()->route('business.my-hotel');
+                case 'resort':
+                    return redirect()->route('business.my-resort');
+                default:
+                    return redirect()->route('business.my-shop');
+            }
         }
 
         // Upload business permit
@@ -130,13 +144,13 @@ class BusinessController extends Controller
         // Redirect based on business type
         switch ($businessProfile->business_type) {
             case 'hotel':
-                return redirect()->route('business.my-hotel')
+                return redirect()->route('terms', ['from' => 'business_setup'])
                     ->with('success', 'Your hotel profile has been created and is pending approval.');
             case 'resort':
-                return redirect()->route('business.my-resort')
+                return redirect()->route('terms', ['from' => 'business_setup'])
                     ->with('success', 'Your resort profile has been created and is pending approval.');
             default:
-                return redirect()->route('business.my-shop')
+                return redirect()->route('terms', ['from' => 'business_setup'])
                     ->with('success', 'Your shop profile has been created and is pending approval.');
         }
     }
@@ -428,8 +442,21 @@ class BusinessController extends Controller
             // Notify admin for approval
             // $this->notifyAdminForApproval($business);
 
-            return redirect()->route('business.my-shop')
-                ->with('success', 'Your business profile has been submitted for approval. You will be notified once it is reviewed.');
+            // Notify admin for approval
+            // $this->notifyAdminForApproval($business);
+
+            // Redirect based on business type
+            switch ($validated['business_type']) {
+                case 'hotel':
+                    return redirect()->route('terms', ['from' => 'business_profile'])
+                        ->with('success', 'Your hotel profile has been submitted for approval. You will be notified once it is reviewed.');
+                case 'resort':
+                    return redirect()->route('terms', ['from' => 'business_profile'])
+                        ->with('success', 'Your resort profile has been submitted for approval. You will be notified once it is reviewed.');
+                default:
+                    return redirect()->route('terms', ['from' => 'business_profile'])
+                        ->with('success', 'Your business profile has been submitted for approval. You will be notified once it is reviewed.');
+            }
         });
     }
 
@@ -521,8 +548,21 @@ class BusinessController extends Controller
             // Notify admin about the update
             // $this->notifyAdminAboutUpdate($business);
 
-            return redirect()->route('business.my-shop')
-                ->with('success', 'Your business profile has been updated and is pending review.');
+            // Notify admin about the update
+            // $this->notifyAdminAboutUpdate($business);
+
+            // Redirect based on business type
+            switch ($business->business_type) {
+                case 'hotel':
+                    return redirect()->route('terms', ['from' => 'business_profile_update'])
+                        ->with('success', 'Your hotel profile has been updated and is pending review.');
+                case 'resort':
+                    return redirect()->route('terms', ['from' => 'business_profile_update'])
+                        ->with('success', 'Your resort profile has been updated and is pending review.');
+                default:
+                    return redirect()->route('terms', ['from' => 'business_profile_update'])
+                        ->with('success', 'Your business profile has been updated and is pending review.');
+            }
         });
     }
 
@@ -532,7 +572,7 @@ class BusinessController extends Controller
     public function publish(Request $request)
     {
         $business = auth()->user()->businessProfile;
-        
+
         if (!$business) {
             return redirect()->route('business.profile.create')
                 ->with('error', 'Please create a business profile first.');
@@ -544,8 +584,18 @@ class BusinessController extends Controller
             'is_published' => false,
         ]);
 
-        return redirect()->route('business.my-shop')
-            ->with('success', 'Your business has been submitted for review. You will be visible to customers once approved by an admin.');
+        // Redirect based on business type
+        switch ($business->business_type) {
+            case 'hotel':
+                return redirect()->route('business.my-hotel')
+                    ->with('success', 'Your hotel has been submitted for review. You will be visible to customers once approved by an admin.');
+            case 'resort':
+                return redirect()->route('business.my-resort')
+                    ->with('success', 'Your resort has been submitted for review. You will be visible to customers once approved by an admin.');
+            default:
+                return redirect()->route('business.my-shop')
+                    ->with('success', 'Your business has been submitted for review. You will be visible to customers once approved by an admin.');
+        }
     }
 
     /**
@@ -554,7 +604,7 @@ class BusinessController extends Controller
     public function unpublish(Request $request)
     {
         $business = auth()->user()->businessProfile;
-        
+
         if (!$business) {
             return redirect()->route('business.profile.create')
                 ->with('error', 'Business profile not found.');
@@ -562,8 +612,18 @@ class BusinessController extends Controller
 
         $business->update(['is_published' => false]);
 
-        return redirect()->route('business.my-shop')
-            ->with('success', 'Your business is currently hidden.');
+        // Redirect based on business type
+        switch ($business->business_type) {
+            case 'hotel':
+                return redirect()->route('business.my-hotel')
+                    ->with('success', 'Your hotel is currently hidden.');
+            case 'resort':
+                return redirect()->route('business.my-resort')
+                    ->with('success', 'Your resort is currently hidden.');
+            default:
+                return redirect()->route('business.my-shop')
+                    ->with('success', 'Your business is currently hidden.');
+        }
     }
 
     /**

@@ -120,7 +120,7 @@ class ProfileController extends Controller
 
         Profile::create($profileData);
 
-        return redirect()->route('dashboard')
+        return redirect()->route('terms', ['from' => 'profile_setup'])
             ->with('success', 'Profile setup completed successfully!');
     }
 
@@ -182,7 +182,7 @@ class ProfileController extends Controller
         // Create business using Business model
         $business = \App\Models\Business::create($businessData);
 
-        return redirect()->route('business.my-shop')
+        return redirect()->route('terms', ['from' => 'profile_setup'])
             ->with('success', 'Business profile setup completed! You can now start adding products.');
     }
 

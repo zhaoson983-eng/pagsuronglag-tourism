@@ -55,21 +55,30 @@
         <!-- Mobile Top Header -->
         <div class="md:hidden px-4 py-3 flex items-center justify-between">
             <img src="{{ asset('logo.png') }}" alt="Pagsurong Lagonoy Logo" class="w-8 h-auto">
-            
+
             <!-- Mobile Category Navigation -->
             <div class="flex items-center space-x-4 text-xs">
-                <a href="{{ route('customer.products') }}" class="text-white hover:text-blue-200 transition-colors {{ request()->routeIs('customer.products') ? 'font-semibold' : '' }}">
-                    Products
-                </a>
-                <a href="{{ route('customer.hotels') }}" class="text-white hover:text-blue-200 transition-colors {{ request()->routeIs('customer.hotels') ? 'font-semibold' : '' }}">
-                    Hotels
-                </a>
-                <a href="{{ route('customer.resorts') }}" class="text-white hover:text-blue-200 transition-colors {{ request()->routeIs('customer.resorts') ? 'font-semibold' : '' }}">
-                    Resorts
-                </a>
-                <a href="{{ route('customer.attractions') }}" class="text-white hover:text-blue-200 transition-colors {{ request()->routeIs('customer.attractions') ? 'font-semibold' : '' }}">
-                    Attractions
-                </a>
+                @auth
+                    @php
+                        $user = auth()->user();
+                    @endphp
+                    @if($user->role === 'customer' && $user->hasCompletedProfile())
+                        <a href="{{ route('customer.products') }}" class="text-white hover:text-blue-200 transition-colors {{ request()->routeIs('customer.products') ? 'font-semibold' : '' }}">
+                            Products
+                        </a>
+                        <a href="{{ route('customer.hotels') }}" class="text-white hover:text-blue-200 transition-colors {{ request()->routeIs('customer.hotels') ? 'font-semibold' : '' }}">
+                            Hotels
+                        </a>
+                        <a href="{{ route('customer.resorts') }}" class="text-white hover:text-blue-200 transition-colors {{ request()->routeIs('customer.resorts') ? 'font-semibold' : '' }}">
+                            Resorts
+                        </a>
+                        <a href="{{ route('customer.attractions') }}" class="text-white hover:text-blue-200 transition-colors {{ request()->routeIs('customer.attractions') ? 'font-semibold' : '' }}">
+                            Attractions
+                        </a>
+                    @elseif($user->role === 'customer' && !$user->hasCompletedProfile())
+                        <span class="text-white text-xs opacity-75">Complete your profile to access all features</span>
+                    @endif
+                @endauth
             </div>
         </div>
         
@@ -84,53 +93,74 @@
                 @endphp
                 
                 @if($user->role === 'customer')
-                    <!-- Mobile Bottom Navigation -->
-                    <a href="{{ route('customer.dashboard') }}" class="flex flex-col items-center px-3 py-2 text-xs text-gray-600 hover:text-blue-500 transition-colors {{ request()->routeIs('customer.dashboard') ? 'text-blue-500' : '' }}">
-                        <i class="fas fa-home text-lg mb-1"></i>
-                        <span>Home</span>
-                    </a>
-                    
-                    <a href="{{ route('customer.orders') }}" class="flex flex-col items-center px-3 py-2 text-xs text-gray-600 hover:text-blue-500 transition-colors relative {{ request()->routeIs('customer.orders') ? 'text-blue-500' : '' }}">
-                        <i class="fas fa-shopping-bag text-lg mb-1"></i>
-                        <span>Orders</span>
-                    </a>
-                    
-                    <a href="{{ route('customer.messages') }}" class="flex flex-col items-center px-3 py-2 text-xs text-gray-600 hover:text-blue-500 transition-colors relative {{ request()->routeIs('customer.messages') ? 'text-blue-500' : '' }}">
-                        <div class="relative">
-                            <i class="fas fa-envelope text-lg mb-1"></i>
-                            @if($unreadMessages)
-                                <span class="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
-                                    {{ $unreadMessages }}
-                                </span>
-                            @endif
-                        </div>
-                        <span>Messages</span>
-                    </a>
-                    
-                    <a href="{{ route('customer.cart') }}" class="flex flex-col items-center px-3 py-2 text-xs text-gray-600 hover:text-blue-500 transition-colors relative {{ request()->routeIs('customer.cart') ? 'text-blue-500' : '' }}">
-                        <div class="relative">
-                            <i class="fas fa-shopping-cart text-lg mb-1"></i>
-                            @if($cartCount)
-                                <span class="absolute -top-1 -right-2 bg-orange-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
-                                    {{ $cartCount }}
-                                </span>
-                            @endif
-                        </div>
-                        <span>Cart</span>
-                    </a>
-                    
-                    <button onclick="toggleMobileProfileSidebar()" class="flex flex-col items-center px-3 py-2 text-xs text-gray-600 hover:text-blue-500 focus:outline-none">
-                        @if($user->profile && $user->profile->profile_picture)
-                            <img src="{{ Storage::url($user->profile->profile_picture) }}" 
-                                 alt="Profile" 
-                                 class="w-6 h-6 rounded-full object-cover border border-blue-400 mb-1">
-                        @else
-                            <div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs mb-1">
-                                {{ strtoupper(substr($user->name, 0, 1)) }}
+                    @if($user->hasCompletedProfile())
+                        <!-- Mobile Bottom Navigation - Full customer features -->
+                        <a href="{{ route('customer.dashboard') }}" class="flex flex-col items-center px-3 py-2 text-xs text-gray-600 hover:text-blue-500 transition-colors {{ request()->routeIs('customer.dashboard') ? 'text-blue-500' : '' }}">
+                            <i class="fas fa-home text-lg mb-1"></i>
+                            <span>Home</span>
+                        </a>
+
+                        <a href="{{ route('customer.orders') }}" class="flex flex-col items-center px-3 py-2 text-xs text-gray-600 hover:text-blue-500 transition-colors relative {{ request()->routeIs('customer.orders') ? 'text-blue-500' : '' }}">
+                            <i class="fas fa-shopping-bag text-lg mb-1"></i>
+                            <span>Orders</span>
+                        </a>
+
+                        <a href="{{ route('customer.messages') }}" class="flex flex-col items-center px-3 py-2 text-xs text-gray-600 hover:text-blue-500 transition-colors relative {{ request()->routeIs('customer.messages') ? 'text-blue-500' : '' }}">
+                            <div class="relative">
+                                <i class="fas fa-envelope text-lg mb-1"></i>
+                                @if($unreadMessages)
+                                    <span class="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                                        {{ $unreadMessages }}
+                                    </span>
+                                @endif
                             </div>
-                        @endif
-                        <span>Profile</span>
-                    </button>
+                            <span>Messages</span>
+                        </a>
+
+                        <a href="{{ route('customer.cart') }}" class="flex flex-col items-center px-3 py-2 text-xs text-gray-600 hover:text-blue-500 transition-colors relative {{ request()->routeIs('customer.cart') ? 'text-blue-500' : '' }}">
+                            <div class="relative">
+                                <i class="fas fa-shopping-cart text-lg mb-1"></i>
+                                @if($cartCount)
+                                    <span class="absolute -top-1 -right-2 bg-orange-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                                        {{ $cartCount }}
+                                    </span>
+                                @endif
+                            </div>
+                            <span>Cart</span>
+                        </a>
+
+                        <button onclick="toggleMobileProfileSidebar()" class="flex flex-col items-center px-3 py-2 text-xs text-gray-600 hover:text-blue-500 focus:outline-none">
+                            @if($user->profile && $user->profile->profile_picture)
+                                <img src="{{ Storage::url($user->profile->profile_picture) }}"
+                                     alt="Profile"
+                                     class="w-6 h-6 rounded-full object-cover border border-blue-400 mb-1">
+                            @else
+                                <div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs mb-1">
+                                    {{ strtoupper(substr($user->name, 0, 1)) }}
+                                </div>
+                            @endif
+                            <span>Profile</span>
+                        </button>
+                    @else
+                        <!-- Mobile Bottom Navigation - Simple during profile setup -->
+                        <a href="{{ route('profile.setup') }}" class="flex flex-col items-center px-3 py-2 text-xs text-gray-600 hover:text-blue-500 transition-colors {{ request()->routeIs('profile.setup') ? 'text-blue-500' : '' }}">
+                            <i class="fas fa-user-edit text-lg mb-1"></i>
+                            <span>Setup</span>
+                        </a>
+
+                        <button onclick="toggleMobileProfileSidebar()" class="flex flex-col items-center px-3 py-2 text-xs text-gray-600 hover:text-blue-500 focus:outline-none">
+                            @if($user->profile && $user->profile->profile_picture)
+                                <img src="{{ Storage::url($user->profile->profile_picture) }}"
+                                     alt="Profile"
+                                     class="w-6 h-6 rounded-full object-cover border border-blue-400 mb-1">
+                            @else
+                                <div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs mb-1">
+                                    {{ strtoupper(substr($user->name, 0, 1)) }}
+                                </div>
+                            @endif
+                            <span>Profile</span>
+                        </button>
+                    @endif
                 @endif
             @endauth
         </div>
@@ -262,40 +292,50 @@
                 @else
                     <!-- Customer Nav - Desktop -->
                     <div class="hidden md:flex items-center space-x-6">
-                        <a href="{{ route('customer.dashboard') }}" 
-                           class="text-white hover:text-blue-100 transition-all duration-200 relative group {{ request()->routeIs('customer.dashboard') ? 'font-semibold' : '' }}">
-                            <i class="fas fa-home mr-1"></i> Home
-                            <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300 {{ request()->routeIs('customer.dashboard') ? 'w-full' : '' }}"></span>
-                        </a>
-                        <a href="{{ route('customer.products') }}" 
-                           class="text-white hover:text-blue-100 transition-all duration-200 relative group {{ request()->routeIs('customer.products') ? 'font-semibold' : '' }}">
-                            <i class="fas fa-shopping-basket mr-1"></i> Products & Shops
-                            <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300 {{ request()->routeIs('customer.products') ? 'w-full' : '' }}"></span>
-                        </a>
-                        <a href="{{ route('customer.hotels') }}" 
-                           class="text-white hover:text-blue-100 transition-all duration-200 relative group {{ request()->routeIs('customer.hotels') ? 'font-semibold' : '' }}">
-                            <i class="fas fa-hotel mr-1"></i> Hotels
-                            <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300 {{ request()->routeIs('customer.hotels') ? 'w-full' : '' }}"></span>
-                        </a>
-                        <a href="{{ route('customer.resorts') }}" 
-                           class="text-white hover:text-blue-100 transition-all duration-200 relative group {{ request()->routeIs('customer.resorts') ? 'font-semibold' : '' }}">
-                            <i class="fas fa-umbrella-beach mr-1"></i> Resorts
-                            <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300 {{ request()->routeIs('customer.resorts') ? 'w-full' : '' }}"></span>
-                        </a>
-                        <a href="{{ route('customer.attractions') }}" 
-                           class="text-white hover:text-blue-100 transition-all duration-200 relative group {{ request()->routeIs('customer.attractions') ? 'font-semibold' : '' }}">
-                            <i class="fas fa-map-marked-alt mr-1"></i> Attractions
-                            <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300 {{ request()->routeIs('customer.attractions') ? 'w-full' : '' }}"></span>
-                        </a>
-                        <a href="{{ route('customer.cart') }}" class="text-white hover:text-blue-100 transition-all duration-200 relative group {{ request()->routeIs('customer.cart') ? 'font-semibold' : '' }}">
-                            <i class="fas fa-shopping-cart"></i> My Cart
-                            @if($cartCount > 0)
-                                <span class="absolute -top-1 -right-2 bg-orange-500 text-white text-xs rounded-full px-1 min-w-[16px] text-center text-[10px]">
-                                    {{ $cartCount }}
-                                </span>
-                            @endif
-                            <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300 {{ request()->routeIs('customer.cart') ? 'w-full' : '' }}"></span>
-                        </a>
+                        @if($user->hasCompletedProfile())
+                            <!-- Full customer navigation - after profile completion -->
+                            <a href="{{ route('customer.dashboard') }}"
+                               class="text-white hover:text-blue-100 transition-all duration-200 relative group {{ request()->routeIs('customer.dashboard') ? 'font-semibold' : '' }}">
+                                <i class="fas fa-home mr-1"></i> Home
+                                <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300 {{ request()->routeIs('customer.dashboard') ? 'w-full' : '' }}"></span>
+                            </a>
+                            <a href="{{ route('customer.products') }}"
+                               class="text-white hover:text-blue-100 transition-all duration-200 relative group {{ request()->routeIs('customer.products') ? 'font-semibold' : '' }}">
+                                <i class="fas fa-shopping-basket mr-1"></i> Products & Shops
+                                <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300 {{ request()->routeIs('customer.products') ? 'w-full' : '' }}"></span>
+                            </a>
+                            <a href="{{ route('customer.hotels') }}"
+                               class="text-white hover:text-blue-100 transition-all duration-200 relative group {{ request()->routeIs('customer.hotels') ? 'font-semibold' : '' }}">
+                                <i class="fas fa-hotel mr-1"></i> Hotels
+                                <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300 {{ request()->routeIs('customer.hotels') ? 'w-full' : '' }}"></span>
+                            </a>
+                            <a href="{{ route('customer.resorts') }}"
+                               class="text-white hover:text-blue-100 transition-all duration-200 relative group {{ request()->routeIs('customer.resorts') ? 'font-semibold' : '' }}">
+                                <i class="fas fa-umbrella-beach mr-1"></i> Resorts
+                                <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300 {{ request()->routeIs('customer.resorts') ? 'w-full' : '' }}"></span>
+                            </a>
+                            <a href="{{ route('customer.attractions') }}"
+                               class="text-white hover:text-blue-100 transition-all duration-200 relative group {{ request()->routeIs('customer.attractions') ? 'font-semibold' : '' }}">
+                                <i class="fas fa-map-marked-alt mr-1"></i> Attractions
+                                <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300 {{ request()->routeIs('customer.attractions') ? 'w-full' : '' }}"></span>
+                            </a>
+                            <a href="{{ route('customer.cart') }}" class="text-white hover:text-blue-100 transition-all duration-200 relative group {{ request()->routeIs('customer.cart') ? 'font-semibold' : '' }}">
+                                <i class="fas fa-shopping-cart"></i> My Cart
+                                @if($cartCount > 0)
+                                    <span class="absolute -top-1 -right-2 bg-orange-500 text-white text-xs rounded-full px-1 min-w-[16px] text-center text-[10px]">
+                                        {{ $cartCount }}
+                                    </span>
+                                @endif
+                                <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300 {{ request()->routeIs('customer.cart') ? 'w-full' : '' }}"></span>
+                            </a>
+                        @else
+                            <!-- Simple navigation - during profile setup -->
+                            <a href="{{ route('profile.setup') }}"
+                               class="text-white hover:text-blue-100 transition-all duration-200 relative group {{ request()->routeIs('profile.setup') ? 'font-semibold' : '' }}">
+                                <i class="fas fa-user-edit mr-1"></i> Complete Profile
+                                <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300 {{ request()->routeIs('profile.setup') ? 'w-full' : '' }}"></span>
+                            </a>
+                        @endif
                     </div>
                 @endif
 
@@ -357,7 +397,7 @@
         <div class="flex min-h-[calc(100vh-5rem)] max-h-[calc(100vh-5rem)]">
             <!-- Left Sidebar - Orders Panel (Desktop Only) -->
             @auth
-                @if(auth()->user()->role === 'customer')
+                @if(auth()->user()->role === 'customer' && auth()->user()->hasCompletedProfile())
                     <div class="hidden lg:block w-80 bg-white border-r border-gray-200 overflow-y-auto flex-shrink-0">
                         <div class="p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
                             <div class="flex items-center justify-between">
@@ -418,7 +458,7 @@
             
             <!-- Right Sidebar - Messages Panel -->
             @auth
-                @if(auth()->user()->role === 'customer' || auth()->user()->role === 'business_owner')
+                @if((auth()->user()->role === 'customer' && auth()->user()->hasCompletedProfile()) || (auth()->user()->role === 'business_owner' && auth()->user()->businessProfile && !request()->routeIs(['business.my-hotel', 'business.my-resort'])))
                     <div id="messagesPanel" class="hidden lg:block w-80 bg-white border-l border-gray-200 overflow-y-auto flex-shrink-0 relative z-10">
                         <div class="p-4 border-b border-gray-200 sticky top-0 bg-white z-20">
                             <div class="flex items-center justify-between">
@@ -592,7 +632,7 @@
     @stack('scripts')
     
     @auth
-        @if(auth()->user()->role === 'customer' || auth()->user()->role === 'business_owner')
+        @if((auth()->user()->role === 'customer' && auth()->user()->hasCompletedProfile()) || (auth()->user()->role === 'business_owner' && auth()->user()->businessProfile && !request()->routeIs(['business.my-hotel', 'business.my-resort'])))
             <style>
                 /* Smooth transitions for the messages panel */
                 #messagesPanel {
@@ -640,7 +680,7 @@
     
     <!-- Mobile Profile Sidebar -->
     @auth
-        @if(auth()->user()->role === 'customer')
+        @if((auth()->user()->role === 'customer' && auth()->user()->hasCompletedProfile()) || (auth()->user()->role === 'business_owner' && auth()->user()->businessProfile && !request()->routeIs(['business.my-hotel', 'business.my-resort'])))
             <!-- Overlay -->
             <div id="mobileProfileOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden" onclick="closeMobileProfileSidebar()"></div>
             
@@ -673,22 +713,65 @@
                     
                     <!-- Menu Items -->
                     <div class="flex-1 py-4">
-                        <a href="{{ route('profile.show') }}" class="flex items-center px-6 py-4 text-gray-700 hover:bg-gray-50 transition-colors">
-                            <i class="fas fa-user mr-4 text-blue-600 w-5"></i>
-                            <span class="font-medium">My Profile</span>
-                        </a>
-                        <a href="{{ route('profile.edit') }}" class="flex items-center px-6 py-4 text-gray-700 hover:bg-gray-50 transition-colors">
-                            <i class="fas fa-edit mr-4 text-blue-600 w-5"></i>
-                            <span class="font-medium">Edit Profile</span>
-                        </a>
-                        <a href="{{ route('customer.orders') }}" class="flex items-center px-6 py-4 text-gray-700 hover:bg-gray-50 transition-colors">
-                            <i class="fas fa-shopping-bag mr-4 text-blue-600 w-5"></i>
-                            <span class="font-medium">My Orders</span>
-                        </a>
-                        <a href="{{ route('customer.messages') }}" class="flex items-center px-6 py-4 text-gray-700 hover:bg-gray-50 transition-colors">
-                            <i class="fas fa-envelope mr-4 text-blue-600 w-5"></i>
-                            <span class="font-medium">Messages</span>
-                        </a>
+                        @php
+                            $user = auth()->user();
+                        @endphp
+
+                        @if($user->role === 'customer')
+                            <a href="{{ route('profile.show') }}" class="flex items-center px-6 py-4 text-gray-700 hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-user mr-4 text-blue-600 w-5"></i>
+                                <span class="font-medium">My Profile</span>
+                            </a>
+                            <a href="{{ route('profile.edit') }}" class="flex items-center px-6 py-4 text-gray-700 hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-edit mr-4 text-blue-600 w-5"></i>
+                                <span class="font-medium">Edit Profile</span>
+                            </a>
+                            <a href="{{ route('customer.orders') }}" class="flex items-center px-6 py-4 text-gray-700 hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-shopping-bag mr-4 text-blue-600 w-5"></i>
+                                <span class="font-medium">My Orders</span>
+                            </a>
+                            <a href="{{ route('customer.messages') }}" class="flex items-center px-6 py-4 text-gray-700 hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-envelope mr-4 text-blue-600 w-5"></i>
+                                <span class="font-medium">Messages</span>
+                            </a>
+                        @else
+                            <!-- Business Owner Menu Items -->
+                            <a href="{{ route('profile.show') }}" class="flex items-center px-6 py-4 text-gray-700 hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-user mr-4 text-blue-600 w-5"></i>
+                                <span class="font-medium">My Profile</span>
+                            </a>
+                            <a href="{{ route('profile.edit') }}" class="flex items-center px-6 py-4 text-gray-700 hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-edit mr-4 text-blue-600 w-5"></i>
+                                <span class="font-medium">Edit Profile</span>
+                            </a>
+
+                            @if($user->businessProfile && $user->businessProfile->business_type === 'resort')
+                                <a href="{{ route('business.my-resort') }}" class="flex items-center px-6 py-4 text-gray-700 hover:bg-gray-50 transition-colors">
+                                    <i class="fas fa-umbrella-beach mr-4 text-blue-600 w-5"></i>
+                                    <span class="font-medium">My Resort</span>
+                                </a>
+                            @elseif($user->businessProfile && $user->businessProfile->business_type === 'hotel')
+                                <a href="{{ route('business.my-hotel') }}" class="flex items-center px-6 py-4 text-gray-700 hover:bg-gray-50 transition-colors">
+                                    <i class="fas fa-hotel mr-4 text-blue-600 w-5"></i>
+                                    <span class="font-medium">My Hotel</span>
+                                </a>
+                            @else
+                                <a href="{{ route('business.my-shop') }}" class="flex items-center px-6 py-4 text-gray-700 hover:bg-gray-50 transition-colors">
+                                    <i class="fas fa-store mr-4 text-blue-600 w-5"></i>
+                                    <span class="font-medium">My Shop</span>
+                                </a>
+                            @endif
+
+                            <a href="{{ route('business.orders') }}" class="flex items-center px-6 py-4 text-gray-700 hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-shopping-bag mr-4 text-blue-600 w-5"></i>
+                                <span class="font-medium">Orders</span>
+                            </a>
+                            <a href="{{ route('messages.index') }}" class="flex items-center px-6 py-4 text-gray-700 hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-envelope mr-4 text-blue-600 w-5"></i>
+                                <span class="font-medium">Messages</span>
+                            </a>
+                        @endif
+
                         <div class="border-t border-gray-200 my-2"></div>
                         <a href="#" class="flex items-center px-6 py-4 text-gray-700 hover:bg-gray-50 transition-colors">
                             <i class="fas fa-cog mr-4 text-blue-600 w-5"></i>
@@ -766,6 +849,99 @@
         });
     </script>
     
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <!-- Company Info -->
+                <div class="col-span-1 md:col-span-2">
+                    <div class="flex items-center mb-4">
+                        <img src="{{ asset('logo.png') }}" alt="Pagsurong Lagonoy Logo" class="w-8 h-auto mr-3">
+                        <div class="font-playfair text-xl font-bold">Pagsurong Lagonoy</div>
+                    </div>
+                    <p class="text-gray-300 text-sm mb-4">
+                        Your gateway to authentic Camarines Sur tourism experiences. Connect with local businesses and discover the beauty of Pagsurong Lagonoy.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="https://facebook.com" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-facebook-f text-lg"></i>
+                        </a>
+                        <a href="https://instagram.com" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-instagram text-lg"></i>
+                        </a>
+                        <a href="https://twitter.com" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-twitter text-lg"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Quick Links -->
+                <div>
+                    <h3 class="font-semibold text-white mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="{{ route('home') }}" class="text-gray-300 hover:text-white transition-colors text-sm">
+                                Home
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('about') }}" class="text-gray-300 hover:text-white transition-colors text-sm">
+                                About Us
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('contact') }}" class="text-gray-300 hover:text-white transition-colors text-sm">
+                                Contact
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('terms') }}" class="text-gray-300 hover:text-white transition-colors text-sm">
+                                Terms & Conditions
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Support -->
+                <div>
+                    <h3 class="font-semibold text-white mb-4">Support</h3>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="#" class="text-gray-300 hover:text-white transition-colors text-sm">
+                                Help Center
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="text-gray-300 hover:text-white transition-colors text-sm">
+                                Privacy Policy
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="text-gray-300 hover:text-white transition-colors text-sm">
+                                FAQ
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="text-gray-300 hover:text-white transition-colors text-sm">
+                                Report Issue
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Bottom Bar -->
+            <div class="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <div class="text-gray-400 text-sm">
+                    © {{ date('Y') }} Pagsurong Lagonoy Tourism Platform. All rights reserved.
+                </div>
+                <div class="text-gray-400 text-sm mt-4 md:mt-0">
+                    Made with ❤️ for the people of Camarines Sur
+                </div>
+            </div>
+        </div>
+    </footer>
+
     <!-- Rating System -->
     <script src="{{ asset('js/ratings.js') }}"></script>
 </body>

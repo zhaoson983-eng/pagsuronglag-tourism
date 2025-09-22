@@ -44,6 +44,9 @@ use App\Http\Controllers\CommentController;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/about', [HomeController::class, 'about'])->name('about');
 Route::get('/contact', [HomeController::class, 'contact'])->name('contact');
+Route::get('/terms', [App\Http\Controllers\TermsController::class, 'show'])->name('terms');
+Route::post('/terms/accept', [App\Http\Controllers\TermsController::class, 'accept'])->name('terms.accept');
+Route::post('/terms/decline', [App\Http\Controllers\TermsController::class, 'decline'])->name('terms.decline');
 
 // Public browsing
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');

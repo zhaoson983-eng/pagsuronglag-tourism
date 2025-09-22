@@ -32,16 +32,58 @@
                 @csrf
 
                 <div class="rounded-md shadow-sm -space-y-px">
-                    <div class="avatar-box flex flex-col items-center mb-6">
-                        <img id="preview" class="avatar-preview w-24 h-24 rounded-full object-cover border-2 border-blue-500 mb-2" src="{{ asset('uploads/default.png') }}" alt="avatar" />
-                        <input type="file" name="profile_picture" accept="image/*" onchange="previewFile(this)" class="text-sm" />
+                    <!-- Enhanced Profile Picture Upload -->
+                    <div class="mb-8">
+                        <div class="flex flex-col items-center">
+                            <div class="relative">
+                                <!-- Upload Zone -->
+                                <div id="upload-zone" class="relative w-32 h-32 rounded-full border-4 border-dashed border-blue-300 bg-blue-50 hover:bg-blue-100 transition-all duration-300 cursor-pointer group">
+                                    <div class="absolute inset-0 rounded-full overflow-hidden">
+                                        <img id="preview" class="w-full h-full object-cover" src="{{ asset('uploads/default.png') }}" alt="Profile Picture">
+                                    </div>
+
+                                    <!-- Upload Overlay -->
+                                    <div id="upload-overlay" class="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                        <div class="text-center text-white">
+                                            <i class="fas fa-camera text-2xl mb-2"></i>
+                                            <p class="text-xs font-medium">Upload Photo</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Remove Button -->
+                                    <button id="remove-btn" type="button" onclick="removeImage()" class="hidden absolute -top-2 -right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors duration-200" title="Remove photo">
+                                        <i class="fas fa-times text-sm"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Hidden File Input -->
+                                <input type="file" id="profile_picture" name="profile_picture" accept="image/*" class="hidden" onchange="handleFileSelect(event)">
+                            </div>
+
+                            <!-- Upload Instructions -->
+                            <div class="mt-4 text-center">
+                                <p class="text-sm text-gray-600 mb-2">Click to upload or drag and drop</p>
+                                <p class="text-xs text-gray-500">PNG, JPG up to 2MB</p>
+                            </div>
+
+                            <!-- Progress Bar -->
+                            <div id="progress-container" class="hidden mt-3 w-32">
+                                <div class="bg-gray-200 rounded-full h-2">
+                                    <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                </div>
+                                <p id="progress-text" class="text-xs text-gray-500 mt-1 text-center">Uploading...</p>
+                            </div>
+
+                            <!-- Error Message -->
+                            <div id="error-message" class="hidden mt-2 text-red-600 text-sm text-center"></div>
+                        </div>
                     </div>
 
                     <div class="py-2">
                         <label for="full_name" class="block text-sm font-medium text-gray-700">Full Name <span class="text-red-500">*</span></label>
                         <input id="full_name" name="full_name" type="text" required 
                                class="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 placeholder-gray-500 text-gray-900"
-                               placeholder="Juan Dela Cruz" value="{{ old('full_name') }}">
+                               placeholder="Juan Dela Cruz" value="{{ old('full_name', auth()->user()->name) }}">
                     </div>
 
                     <div class="py-2">
@@ -104,14 +146,145 @@
 @endsection
 
 @push('scripts')
-    <script>
-        function previewFile(input) {
-            const file = input.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = e => document.getElementById('preview').src = e.target.result;
-                reader.readAsDataURL(file);
-            }
+<script>
+let selectedFile = null;
+
+// Handle file selection
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        validateAndPreviewFile(file);
+    }
+}
+
+// Validate and preview file
+function validateAndPreviewFile(file) {
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+
+    // Clear previous errors
+    hideError();
+
+    // Validate file type
+    if (!allowedTypes.includes(file.type)) {
+        showError('Please select a valid image file (PNG, JPG, JPEG)');
+        return;
+    }
+
+    // Validate file size
+    if (file.size > maxSize) {
+        showError('File size must be less than 2MB');
+        return;
+    }
+
+    selectedFile = file;
+    previewFile(file);
+    showRemoveButton();
+}
+
+// Preview file
+function previewFile(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('preview').src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+// Remove image
+function removeImage() {
+    document.getElementById('preview').src = "{{ asset('uploads/default.png') }}";
+    document.getElementById('profile_picture').value = '';
+    selectedFile = null;
+    hideRemoveButton();
+    hideError();
+}
+
+// Show error message
+function showError(message) {
+    const errorDiv = document.getElementById('error-message');
+    errorDiv.textContent = message;
+    errorDiv.classList.remove('hidden');
+}
+
+// Hide error message
+function hideError() {
+    document.getElementById('error-message').classList.add('hidden');
+}
+
+// Show remove button
+function showRemoveButton() {
+    document.getElementById('remove-btn').classList.remove('hidden');
+}
+
+// Hide remove button
+function hideRemoveButton() {
+    document.getElementById('remove-btn').classList.add('hidden');
+}
+
+// Drag and drop functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadZone = document.getElementById('upload-zone');
+    const fileInput = document.getElementById('profile_picture');
+
+    // Click to upload
+    uploadZone.addEventListener('click', function() {
+        fileInput.click();
+    });
+
+    // Drag and drop
+    uploadZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadZone.classList.add('border-blue-500', 'bg-blue-200');
+    });
+
+    uploadZone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        uploadZone.classList.remove('border-blue-500', 'bg-blue-200');
+    });
+
+    uploadZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadZone.classList.remove('border-blue-500', 'bg-blue-200');
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            validateAndPreviewFile(files[0]);
         }
-    </script>
+    });
+
+    // File input change
+    fileInput.addEventListener('change', handleFileSelect);
+});
+
+// Simulate upload progress (since we're using basic form submission)
+function simulateProgress() {
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
+
+    progressContainer.classList.remove('hidden');
+
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += 10;
+        progressBar.style.width = progress + '%';
+
+        if (progress >= 100) {
+            clearInterval(interval);
+            setTimeout(() => {
+                progressContainer.classList.add('hidden');
+                progressBar.style.width = '0%';
+            }, 500);
+        }
+    }, 100);
+}
+
+// Form submission
+document.querySelector('form').addEventListener('submit', function(e) {
+    if (selectedFile) {
+        simulateProgress();
+    }
+});
+</script>
 @endpush

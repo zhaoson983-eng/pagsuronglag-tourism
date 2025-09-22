@@ -242,9 +242,12 @@ class User extends Authenticatable
         return $this->is_archived;
     }
     
-    public function isActive()
+    /**
+     * Check if user has completed their profile setup.
+     */
+    public function hasCompletedProfile(): bool
     {
-        return !$this->is_archived;
+        return $this->profile !== null;
     }
     
     // Redirect based on role
