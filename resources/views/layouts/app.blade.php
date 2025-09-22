@@ -452,7 +452,7 @@
             @endauth
             
             <!-- Main Content - Feed -->
-            <main id="main-content" class="flex-1 overflow-y-auto bg-gray-50 pt-16 md:pt-0 pb-16 md:pb-0 min-w-0">
+            <main id="main-content" class="flex-1 overflow-y-auto bg-gray-50 pb-16 md:pb-0 min-w-0">
                 @yield('content')
             </main>
             
