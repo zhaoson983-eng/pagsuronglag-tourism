@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Business;
+use App\Models\BusinessProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -256,7 +257,7 @@ class ProductController extends Controller
     }
 
     /**
-     * Get products feed data (AJAX endpoint)
+     * Get products feed data (AJAX endpoint) - simplified to use business_profiles table
      */
     public function getProductsFeedData(Request $request)
     {
@@ -265,131 +266,72 @@ class ProductController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
         
-        $page = $request->get('page', 1);
-        $perPage = 10;
-        $offset = ($page - 1) * $perPage;
+        try {
+            $page = $request->get('page', 1);
+            $perPage = 10;
+            $offset = ($page - 1) * $perPage;
 
-        // Get published businesses (shops) with products
-        $businesses = Business::with(['products', 'businessProfile'])
-            ->whereHas('businessProfile', function($query) {
-                $query->whereNotIn('business_type', ['hotel', 'resort'])
-                      ->where('status', 'approved');
-            })
-            ->where('is_published', true)
-            ->whereHas('products') // Only businesses that have products
-            ->get();
+            // Get shops (non-hotel, non-resort businesses) from business_profiles table
+            $shops = BusinessProfile::with(['business', 'galleries'])
+                ->whereNotIn('business_type', ['hotel', 'resort'])
+                ->where('status', 'approved')
+                ->whereHas('business', function($q) {
+                    $q->where('is_published', true);
+                })
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function($profile) {
+                    // Get the cover image
+                    $image = null;
+                    if ($profile->cover_image) {
+                        $image = \Storage::url($profile->cover_image);
+                    } elseif ($profile->business && $profile->business->cover_image) {
+                        $image = \Storage::url($profile->business->cover_image);
+                    } elseif ($profile->galleries && $profile->galleries->isNotEmpty()) {
+                        $image = \Storage::url($profile->galleries->first()->image_path);
+                    }
+                    
+                    // Get actual counts from the business
+                    $business = $profile->business;
+                    $likeCount = $business ? $business->likes()->count() : 0;
+                    $commentCount = $business ? $business->comments()->count() : 0;
+                    $userLiked = $business && auth()->check() ? $business->isLikedBy(auth()->user()) : false;
+                    $userRating = 0;
+                    if ($business && auth()->check()) {
+                        $rating = $business->ratings()->where('user_id', auth()->id())->first();
+                        $userRating = $rating ? $rating->rating : 0;
+                    }
+                    
+                    return [
+                        'type' => 'business',
+                        'id' => $business ? $business->id : $profile->id, // Use business ID for API calls
+                        'title' => $profile->business_name ?? ($profile->business ? $profile->business->name : 'Shop'),
+                        'location' => $profile->address ?? 'Location not specified',
+                        'description' => $profile->description ?? '',
+                        'image' => $image,
+                        'profile_avatar' => $profile->profile_avatar ? \Storage::url($profile->profile_avatar) : null,
+                        'rating' => (float)($business ? $business->average_rating ?? 0 : $profile->average_rating ?? 0),
+                        'rating_count' => (int)($business ? $business->total_ratings ?? 0 : $profile->total_ratings ?? 0),
+                        'like_count' => $likeCount,
+                        'comment_count' => $commentCount,
+                        'user_liked' => $userLiked,
+                        'user_rating' => $userRating,
+                        'status' => 'Published',
+                        'url' => route('customer.business.show', $profile->business ? $profile->business->id : $profile->id),
+                        'created_at' => $profile->created_at->toIso8601String()
+                    ];
+                });
 
-        // Get all products from shops
-        $products = Product::with(['business.businessProfile'])
-            ->whereHas('business', function($query) {
-                $query->where('is_published', true)
-                      ->whereHas('businessProfile', function($subQuery) {
-                          $subQuery->whereNotIn('business_type', ['hotel', 'resort'])
-                                   ->where('status', 'approved');
-                      });
-            })
-            ->get();
-
-        // Combine businesses and products into a single feed
-        $feedItems = collect();
-
-        // Add businesses as shop cards
-        foreach ($businesses as $business) {
-            $profile = $business->businessProfile;
-            if ($profile) {
-                $user = auth()->user();
-                $userLiked = $user ? $business->isLikedBy($user) : false;
-                $userRating = $user ? $business->ratings()->where('user_id', $user->id)->first() : null;
-                
-                $feedItems->push([
-                    'type' => 'business',
-                    'id' => $business->id,
-                    'title' => $profile->business_name ?? $business->name ?? 'Business',
-                    'location' => $profile->address ?? 'Location not specified',
-                    'image' => $business->cover_image ? \Storage::url($business->cover_image) : null,
-                    'profile_avatar' => $profile->profile_avatar ? \Storage::url($profile->profile_avatar) : null,
-                    'rating' => (float)($business->average_rating ?? 0),
-                    'rating_count' => (int)($business->total_ratings ?? 0),
-                    'like_count' => $business->likes->count(),
-                    'comment_count' => $business->comments()->count(),
-                    'user_liked' => $userLiked,
-                    'user_rating' => $userRating ? $userRating->rating : 0,
-                    'status' => 'Published',
-                    'url' => route('customer.business.show', $business->id),
-                    'created_at' => $business->created_at,
-                    'product_count' => $business->products->count(),
-                    'description' => $profile->description ?? ''
-                ]);
-            }
-        }
-
-        // Add individual products
-        foreach ($products as $product) {
-            $businessName = 'Local Business';
-            if ($product->business && $product->business->businessProfile) {
-                $businessName = $product->business->businessProfile->business_name ?? $product->business->name ?? 'Local Business';
-            }
-            
-            $user = auth()->user();
-            $userLiked = $user ? $product->likes()->where('user_id', $user->id)->exists() : false;
-            $userRating = $user ? $product->ratings()->where('user_id', $user->id)->first() : null;
-            
-            // Calculate stock status
-            $stockStatus = 'No Stock Info';
-            $stockColor = 'text-gray-600 bg-gray-100';
-            $currentStock = $product->current_stock ?? 0;
-            $stockLimit = $product->stock_limit ?? 0;
-            
-            if ($stockLimit > 0) {
-                if ($currentStock <= 0) {
-                    $stockStatus = 'Out of Stock';
-                    $stockColor = 'text-red-600 bg-red-100';
-                } elseif ($currentStock <= ($stockLimit * 0.2)) {
-                    $stockStatus = 'Low Stock';
-                    $stockColor = 'text-orange-600 bg-orange-100';
-                } else {
-                    $stockStatus = 'In Stock';
-                    $stockColor = 'text-green-600 bg-green-100';
-                }
-            }
-            
-            $feedItems->push([
-                'type' => 'product',
-                'id' => $product->id,
-                'title' => $product->name ?? 'Product',
-                'location' => $businessName,
-                'image' => $product->image ? \Storage::url($product->image) : null,
-                'profile_avatar' => null, // Products don't have profile avatars
-                'rating' => (float)($product->average_rating ?? 0),
-                'rating_count' => (int)($product->total_ratings ?? 0),
-                'like_count' => $product->likes()->count(),
-                'comment_count' => $product->comments()->count(),
-                'user_liked' => $userLiked,
-                'user_rating' => $userRating ? $userRating->rating : 0,
-                'status' => 'Published',
-                'url' => route('customer.business.show', $product->business_id),
-                'created_at' => $product->created_at,
-                'price' => $product->price,
-                'description' => $product->description ?? '',
-                'stock_status' => $stockStatus,
-                'stock_color' => $stockColor,
-                'current_stock' => $currentStock,
-                'business_id' => $product->business_id
+            return response()->json([
+                'items' => $shops->slice($offset, $perPage)->values(),
+                'hasMore' => $shops->count() > ($offset + $perPage),
+                'total' => $shops->count()
             ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Products Feed Error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to load products'], 500);
         }
-
-        // Shuffle the feed items for variety
-        $feedItems = $feedItems->shuffle();
-
-        // Paginate the results
-        $paginatedItems = $feedItems->slice($offset, $perPage)->values();
-        $hasMore = $feedItems->count() > ($offset + $perPage);
-
-        return response()->json([
-            'items' => $paginatedItems,
-            'hasMore' => $hasMore,
-            'currentPage' => $page
-        ]);
     }
     /**
      * Toggle like for a product

@@ -16,7 +16,7 @@ class RoomController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'room_name' => 'required|string|max:255',
             'description' => 'required|string',
             'price_per_night' => 'required|numeric|min:0',
             'capacity' => 'required|integer|min:1',
@@ -25,7 +25,7 @@ class RoomController extends Controller
 
         $room = new Room();
         $room->business_profile_id = Auth::user()->businessProfile->id;
-        $room->name = $validated['name'];
+        $room->name = $validated['room_name'];
         $room->description = $validated['description'];
         $room->price_per_night = $validated['price_per_night'];
         $room->capacity = $validated['capacity'];
@@ -56,7 +56,7 @@ class RoomController extends Controller
             
             return response()->json([
                 'id' => $room->id,
-                'name' => $room->name,
+                'room_name' => $room->name,
                 'description' => $room->description,
                 'price_per_night' => $room->price_per_night,
                 'capacity' => $room->capacity,
@@ -82,7 +82,7 @@ class RoomController extends Controller
         $this->authorize('update', $room);
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'room_name' => 'required|string|max:255',
             'description' => 'required|string',
             'price_per_night' => 'required|numeric|min:0',
             'capacity' => 'required|integer|min:1',
@@ -91,7 +91,7 @@ class RoomController extends Controller
         ]);
 
         $room->update([
-            'name' => $validated['name'],
+            'name' => $validated['room_name'],
             'description' => $validated['description'],
             'price_per_night' => $validated['price_per_night'],
             'capacity' => $validated['capacity'],
@@ -126,6 +126,14 @@ class RoomController extends Controller
         }
         
         $room->delete();
+        
+        // Check if request expects JSON (AJAX request)
+        if (request()->expectsJson() || request()->is('business/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Room deleted successfully!'
+            ]);
+        }
         
         return redirect()->back()->with('success', 'Room deleted successfully!');
     }

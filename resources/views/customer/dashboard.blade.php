@@ -316,6 +316,8 @@ function createFeedItem(item) {
     
     const typeColors = {
         'business': 'bg-blue-500',
+        'shop': 'bg-blue-500',
+        'local_products': 'bg-blue-500',
         'hotel': 'bg-green-500',
         'resort': 'bg-purple-500',
         'attraction': 'bg-orange-500',
@@ -324,6 +326,8 @@ function createFeedItem(item) {
     
     const typeLabels = {
         'business': 'Shop',
+        'shop': 'Shop',
+        'local_products': 'Shop',
         'hotel': 'Hotel',
         'resort': 'Resort',
         'attraction': 'Attraction',
@@ -382,7 +386,7 @@ function createFeedItem(item) {
                     </button>
                 </div>
                 <a href="${item.url}" class="text-blue-500 hover:text-blue-600 font-medium text-sm">
-                    View ${typeLabels[item.type]} →
+                    View ${typeLabels[item.type] || item.type || 'Shop'} →
                 </a>
             </div>
         </div>
@@ -421,6 +425,7 @@ function toggleLike(type, id) {
     let route = '';
     switch(type) {
         case 'business':
+        case 'local_products':
             route = `/businesses/${id}/like`;
             break;
         case 'hotel':
@@ -576,6 +581,7 @@ function submitRating(event, type, id) {
     let route = '';
     switch(type) {
         case 'business':
+        case 'local_products':
             route = `/businesses/${id}/rate`;
             break;
         case 'hotel':
@@ -677,6 +683,7 @@ function loadComments(type, id) {
     let route = '';
     switch(type) {
         case 'business':
+        case 'local_products':
             route = `/businesses/${id}/comments`;
             break;
         case 'hotel':
@@ -723,9 +730,6 @@ function loadComments(type, id) {
                                     <span class="text-xs text-gray-500">${comment.created_at_human || comment.created_at}</span>
                                 </div>
                                 <div class="flex items-center space-x-2">
-                                    <button onclick="likeComment(${comment.id})" class="text-gray-400 hover:text-red-500 text-xs">
-                                        <i class="far fa-heart"></i> <span class="like-count-${comment.id}">0</span>
-                                    </button>
                                     ${comment.can_delete ? `<button onclick="deleteComment(${comment.id}, '${type}', ${id})" class="text-gray-400 hover:text-red-500 text-xs">
                                         <i class="fas fa-trash"></i>
                                     </button>` : ''}
@@ -757,6 +761,7 @@ function submitComment(event, type, id) {
     let route = '';
     switch(type) {
         case 'business':
+        case 'local_products':
             route = `/businesses/${id}/comment`;
             break;
         case 'hotel':
@@ -799,40 +804,6 @@ function submitComment(event, type, id) {
     .catch(error => {
         console.error('Error submitting comment:', error);
         alert('Error submitting comment');
-    });
-}
-
-function likeComment(commentId) {
-    fetch(`/comments/${commentId}/like`, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const likeCountSpan = document.querySelector(`.like-count-${commentId}`);
-            const heartIcon = document.querySelector(`[onclick="likeComment(${commentId})"] i`);
-            
-            if (likeCountSpan) {
-                likeCountSpan.textContent = data.like_count || 0;
-            }
-            
-            if (heartIcon) {
-                if (data.liked) {
-                    heartIcon.classList.remove('far');
-                    heartIcon.classList.add('fas', 'text-red-500');
-                } else {
-                    heartIcon.classList.remove('fas', 'text-red-500');
-                    heartIcon.classList.add('far');
-                }
-            }
-        }
-    })
-    .catch(error => {
-        console.error('Error liking comment:', error);
     });
 }
 

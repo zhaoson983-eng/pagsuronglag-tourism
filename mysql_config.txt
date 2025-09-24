@@ -1,0 +1,11 @@
+# MySQL Database Configuration for Pagsurong Lagonoy
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=pagsuronglag
+DB_USERNAME=root
+DB_PASSWORD=
+
+# Remove or comment out SQLite configuration:
+# DB_CONNECTION=sqlite
+# DB_DATABASE=database/database.sqlite

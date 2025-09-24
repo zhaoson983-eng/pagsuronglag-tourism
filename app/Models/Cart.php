@@ -12,8 +12,8 @@ class Cart extends Model
     protected $fillable = [
         'user_id',
         'product_id',
+        'business_id',
         'quantity',
-        'selected_flavor',
         'price',
     ];
 
@@ -29,6 +29,6 @@ class Cart extends Model
 
     public function business()
     {
-        return $this->hasOneThrough(Business::class, Product::class, 'id', 'id', 'product_id', 'business_id');
+        return $this->belongsTo(Business::class);
     }
 }

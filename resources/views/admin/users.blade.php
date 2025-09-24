@@ -26,9 +26,6 @@
                     Export CSV
                 </button>
             </form>
-            <a href="{{ route('register') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm transition-colors">
-                + Add New
-            </a>
             <a href="{{ route('admin.users.archived') }}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm transition-colors">
                 Archived Users
             </a>

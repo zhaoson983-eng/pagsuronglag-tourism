@@ -270,14 +270,6 @@
                                         <img src="{{ asset('storage/' . $comment->user->profile->profile_picture) }}"
                                              alt="{{ $comment->user->name }}"
                                              class="w-full h-full rounded-full object-cover">
-                                    @elseif($comment->user && $comment->user->profile_avatar)
-                                        <img src="{{ asset('storage/' . $comment->user->profile_avatar) }}"
-                                             alt="{{ $comment->user->name }}"
-                                             class="w-full h-full rounded-full object-cover">
-                                    @elseif($comment->user && $comment->user->profile_picture)
-                                        <img src="{{ asset('storage/' . $comment->user->profile_picture) }}"
-                                             alt="{{ $comment->user->name }}"
-                                             class="w-full h-full rounded-full object-cover">
                                     @else
                                         <div class="w-full h-full bg-blue-500 rounded-full flex items-center justify-center">
                                             <span class="text-white text-xs font-bold">

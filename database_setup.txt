@@ -1,0 +1,13 @@
+# Test Database Connection
+# Add this to your .env file after importing SQL
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=pagsuronglag
+DB_USERNAME=root
+DB_PASSWORD=
+
+# Clear Laravel cache after updating .env
+php artisan config:clear
+php artisan cache:clear

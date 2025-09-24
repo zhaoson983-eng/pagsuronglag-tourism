@@ -44,7 +44,7 @@ class CottagePolicy
 
         // Business owner can only update cottages belonging to their business
         if ($user->role === 'business_owner') {
-            return $cottage->business && $cottage->business->owner_id === $user->id;
+            return $cottage->businessProfile && $cottage->businessProfile->business && $cottage->businessProfile->business->owner_id === $user->id;
         }
 
         return false;
@@ -62,7 +62,7 @@ class CottagePolicy
 
         // Business owner can only delete cottages belonging to their business
         if ($user->role === 'business_owner') {
-            return $cottage->business && $cottage->business->owner_id === $user->id;
+            return $cottage->businessProfile && $cottage->businessProfile->business && $cottage->businessProfile->business->owner_id === $user->id;
         }
 
         return false;

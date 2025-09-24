@@ -8,9 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\User;
 use App\Models\Gallery;
 use App\Models\BusinessStatistic;
+use App\Models\Business;
 use App\Models\HotelLike;
 use App\Models\HotelRating;
 use App\Models\HotelComment;
+use App\Models\BusinessProfileComment;
 use App\Models\ResortLike;
 use App\Models\ResortRating;
 use App\Models\ResortComment;
@@ -88,11 +90,29 @@ class BusinessProfile extends Model
     }
     
     /**
+     * Get all of the resort rooms for the business profile through business.
+     */
+    public function resortRooms()
+    {
+        return $this->hasManyThrough(
+            ResortRoom::class,
+            Business::class,
+            'owner_id', // Foreign key on Business table
+            'resort_id', // Foreign key on ResortRoom table
+            'user_id', // Local key on BusinessProfile table
+            'id' // Local key on Business table
+        );
+    }
+    
+    /**
+     * Get all of the cottages for the business profile.
+     */
+    /**
      * Get all of the cottages for the business profile.
      */
     public function cottages()
     {
-        return $this->hasMany(Cottage::class);
+        return $this->hasMany(Cottage::class, 'business_profile_id');
     }
     
     /**
@@ -246,16 +266,21 @@ class BusinessProfile extends Model
     }
 
     /**
-     * Get unified comments based on business type.
+     * Get all comments for this business profile (unified).
+     * Temporarily disabled - returns empty query builder
      */
     public function comments()
     {
-        if ($this->business_type === self::TYPE_HOTEL) {
-            return $this->hotelComments();
-        } elseif ($this->business_type === self::TYPE_RESORT) {
-            return $this->resortComments();
-        }
-        return collect(); // Empty collection for other types
+        // Return empty query builder that won't execute
+        return $this->newQuery()->whereRaw('1 = 0');
+    }
+
+    /**
+     * Get unified comments based on business type (legacy method).
+     */
+    public function getCommentsByType()
+    {
+        return $this->comments(); // Now all use the same table
     }
 
     /**

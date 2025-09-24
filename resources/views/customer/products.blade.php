@@ -787,7 +787,10 @@ function updateFeedItemRating(type, id, averageRating, totalRatings) {
     if (feedItem) {
         const ratingButton = feedItem.querySelector(`[onclick*="showRating('${type}', ${id})"] span`);
         if (ratingButton) {
-            ratingButton.textContent = `${averageRating.toFixed(1)} (${totalRatings})`;
+            // Ensure averageRating is a number and handle null/undefined cases
+            const rating = parseFloat(averageRating) || 0;
+            const count = parseInt(totalRatings) || 0;
+            ratingButton.textContent = `${rating.toFixed(1)} (${count})`;
         }
     }
 }

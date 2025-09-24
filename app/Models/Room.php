@@ -39,14 +39,6 @@ class Room extends Model
     }
 
     /**
-     * Get the bookings for the room.
-     */
-    public function bookings(): HasMany
-    {
-        return $this->hasMany(Booking::class);
-    }
-
-    /**
      * Get the room images.
      */
     public function images()

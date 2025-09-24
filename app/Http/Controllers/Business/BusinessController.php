@@ -211,15 +211,15 @@ class BusinessController extends Controller
             return redirect()->route('business.setup');
         }
 
-        // Get rooms for the resort (using same structure as hotel)
-        $rooms = $business->rooms()->latest()->get();
+        // Get resort rooms for the resort
+        $rooms = $business->resortRooms()->with('galleries')->latest()->get();
         
         // Get cottages for the resort
         $cottages = $business->cottages()->with('galleries')->latest()->get();
         
         // Calculate stats
-        $totalRooms = $business->rooms()->count();
-        $availableRooms = $business->rooms()->where('is_available', true)->count();
+        $totalRooms = $business->resortRooms()->count();
+        $availableRooms = $business->resortRooms()->where('is_available', true)->count();
         $totalCottages = $business->cottages()->count();
         $availableCottages = $business->cottages()->where('is_available', true)->count();
         $galleryCount = $business->gallery()->count();

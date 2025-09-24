@@ -32,10 +32,7 @@ class CartController extends Controller
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
-            'selected_flavor' => 'nullable|string|max:255',
         ]);
-
-        $selectedFlavor = $request->selected_flavor;
         
         // Get the product to access its price and stock
         $product = \App\Models\Product::findOrFail($validated['product_id']);
@@ -48,7 +45,6 @@ class CartController extends Controller
         // Check if requested quantity is available
         $existingCart = Cart::where('user_id', Auth::id())
             ->where('product_id', $validated['product_id'])
-            ->where('selected_flavor', $selectedFlavor)
             ->first();
 
         $totalRequestedQuantity = $validated['quantity'];
@@ -68,8 +64,8 @@ class CartController extends Controller
             Cart::create([
                 'user_id' => Auth::id(),
                 'product_id' => $validated['product_id'],
+                'business_id' => $product->business_id,
                 'quantity' => $validated['quantity'],
-                'selected_flavor' => $selectedFlavor,
                 'price' => $product->price,
             ]);
         }

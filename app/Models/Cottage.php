@@ -11,7 +11,6 @@ class Cottage extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'business_id',
         'business_profile_id',
         'cottage_name',
         'cottage_type',
@@ -40,7 +39,9 @@ class Cottage extends Model
      */
     public function business()
     {
-        return $this->belongsTo(Business::class);
+        return $this->belongsTo(Business::class, 'business_profile_id', 'id')
+            ->join('business_profiles', 'business_profiles.business_id', '=', 'businesses.id')
+            ->select('businesses.*');
     }
 
     /**

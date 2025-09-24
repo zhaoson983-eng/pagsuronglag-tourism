@@ -234,6 +234,11 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/promotions', [\App\Http\Controllers\Business\BusinessController::class, 'storePromotion'])->name('promotions.store');
             Route::delete('/promotions/{id}', [\App\Http\Controllers\Business\BusinessController::class, 'destroyPromotion'])->name('promotions.destroy');
             
+            // Debug route for testing room creation
+            Route::get('/rooms/test', function() {
+                return response()->json(['message' => 'Rooms endpoint is working', 'controller' => 'ResortRoomController']);
+            })->name('rooms.test');
+            
             // Resort Room routes
             Route::post('/rooms', [\App\Http\Controllers\Business\ResortRoomController::class, 'store'])->name('rooms.store');
             Route::get('/rooms/{room}/edit', [\App\Http\Controllers\Business\ResortRoomController::class, 'edit'])->name('rooms.edit');
@@ -270,13 +275,6 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/gallery/store', [\App\Http\Controllers\Business\BusinessController::class, 'storeGallery'])->name('gallery.store');
             Route::delete('/gallery/{id}', [\App\Http\Controllers\Business\BusinessController::class, 'destroyGallery'])->name('gallery.destroy');
             
-            // Room management routes
-            Route::post('/rooms', [\App\Http\Controllers\Business\RoomController::class, 'store'])->name('rooms.store');
-            Route::get('/rooms/{room}/edit', [\App\Http\Controllers\Business\RoomController::class, 'edit'])->name('rooms.edit');
-            Route::put('/rooms/{room}', [\App\Http\Controllers\Business\RoomController::class, 'update'])->name('rooms.update');
-            Route::delete('/rooms/{room}', [\App\Http\Controllers\Business\RoomController::class, 'destroy'])->name('rooms.destroy');
-            
-            // Cottage management routes
             Route::post('/cottages', [\App\Http\Controllers\Business\CottageController::class, 'store'])->name('cottages.store');
             Route::put('/cottages/{cottage}', [\App\Http\Controllers\Business\CottageController::class, 'update'])->name('cottages.update');
             Route::delete('/cottages/{cottage}', [\App\Http\Controllers\Business\CottageController::class, 'destroy'])->name('cottages.destroy');

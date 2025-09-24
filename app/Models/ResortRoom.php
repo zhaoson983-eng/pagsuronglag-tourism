@@ -11,29 +11,25 @@ class ResortRoom extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'business_id',
-        'room_number',
+        'resort_id',
+        'room_name',
         'room_type',
         'price_per_night',
         'capacity',
-        'size',
-        'beds',
         'description',
-        'image',
         'is_available',
         'amenities'
     ];
 
     protected $casts = [
         'price_per_night' => 'decimal:2',
-        'size' => 'decimal:1',
-        'is_available' => 'boolean',
-        'amenities' => 'array'
+        'is_available' => 'boolean'
+        // Removed 'amenities' => 'array' to allow manual string-to-array conversion
     ];
 
     public function business()
     {
-        return $this->belongsTo(Business::class);
+        return $this->belongsTo(Business::class, 'resort_id', 'id');
     }
 
     /**
@@ -42,5 +38,13 @@ class ResortRoom extends Model
     public function galleries()
     {
         return $this->hasMany(Gallery::class, 'room_id')->where('room_type', 'resort');
+    }
+
+    /**
+     * Get the images for this room (alias for galleries).
+     */
+    public function images()
+    {
+        return $this->galleries();
     }
 }

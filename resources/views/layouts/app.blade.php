@@ -284,8 +284,8 @@
                             Users
                             <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300 {{ request()->routeIs('admin.users') ? 'w-full' : '' }}"></span>
                         </a>
-                        <a href="{{ route('admin.uploadpromotion') }}" 
-                           class="text-white hover:text-blue-100 transition-colors duration-200 {{ request()->routeIs('admin.uploadpromotion') ? 'font-semibold' : '' }}">
+                        <a href="{{ route('admin.upload.spots') }}" 
+                           class="text-white hover:text-blue-100 transition-colors duration-200 {{ request()->routeIs('admin.upload.spots') ? 'font-semibold' : '' }}">
                             Promotions
                         </a>
 
@@ -848,99 +848,6 @@
             });
         });
     </script>
-    
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-white mt-auto">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <!-- Company Info -->
-                <div class="col-span-1 md:col-span-2">
-                    <div class="flex items-center mb-4">
-                        <img src="{{ asset('logo.png') }}" alt="Pagsurong Lagonoy Logo" class="w-8 h-auto mr-3">
-                        <div class="font-playfair text-xl font-bold">Pagsurong Lagonoy</div>
-                    </div>
-                    <p class="text-gray-300 text-sm mb-4">
-                        Your gateway to authentic Camarines Sur tourism experiences. Connect with local businesses and discover the beauty of Pagsurong Lagonoy.
-                    </p>
-                    <div class="flex space-x-4">
-                        <a href="https://facebook.com" class="text-gray-400 hover:text-white transition-colors">
-                            <i class="fab fa-facebook-f text-lg"></i>
-                        </a>
-                        <a href="https://instagram.com" class="text-gray-400 hover:text-white transition-colors">
-                            <i class="fab fa-instagram text-lg"></i>
-                        </a>
-                        <a href="https://twitter.com" class="text-gray-400 hover:text-white transition-colors">
-                            <i class="fab fa-twitter text-lg"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Quick Links -->
-                <div>
-                    <h3 class="font-semibold text-white mb-4">Quick Links</h3>
-                    <ul class="space-y-2">
-                        <li>
-                            <a href="{{ route('home') }}" class="text-gray-300 hover:text-white transition-colors text-sm">
-                                Home
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ route('about') }}" class="text-gray-300 hover:text-white transition-colors text-sm">
-                                About Us
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ route('contact') }}" class="text-gray-300 hover:text-white transition-colors text-sm">
-                                Contact
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ route('terms') }}" class="text-gray-300 hover:text-white transition-colors text-sm">
-                                Terms & Conditions
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- Support -->
-                <div>
-                    <h3 class="font-semibold text-white mb-4">Support</h3>
-                    <ul class="space-y-2">
-                        <li>
-                            <a href="#" class="text-gray-300 hover:text-white transition-colors text-sm">
-                                Help Center
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="text-gray-300 hover:text-white transition-colors text-sm">
-                                Privacy Policy
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="text-gray-300 hover:text-white transition-colors text-sm">
-                                FAQ
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="text-gray-300 hover:text-white transition-colors text-sm">
-                                Report Issue
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Bottom Bar -->
-            <div class="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-                <div class="text-gray-400 text-sm">
-                    © {{ date('Y') }} Pagsurong Lagonoy Tourism Platform. All rights reserved.
-                </div>
-                <div class="text-gray-400 text-sm mt-4 md:mt-0">
-                    Made with ❤️ for the people of Camarines Sur
-                </div>
-            </div>
-        </div>
-    </footer>
 
     <!-- Rating System -->
     <script src="{{ asset('js/ratings.js') }}"></script>

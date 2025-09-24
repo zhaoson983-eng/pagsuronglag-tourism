@@ -681,6 +681,14 @@ use Illuminate\Support\Facades\Storage;
             })
             .then(response => {
                 if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('Failed to delete room');
+                }
+            })
+            .then(data => {
+                if (data.success) {
+                    alert('Room deleted successfully!');
                     window.location.reload();
                 } else {
                     alert('Failed to delete room. Please try again.');
@@ -688,7 +696,7 @@ use Illuminate\Support\Facades\Storage;
             })
             .catch(error => {
                 console.error('Error deleting room:', error);
-                alert('An error occurred while deleting the room.');
+                alert('Failed to delete room. Please try again.');
             });
         }
     }

@@ -40,7 +40,6 @@ class CottageController extends Controller
 
             // Create the cottage
             $cottage = new Cottage();
-            $cottage->business_id = $businessProfile->business ? $businessProfile->business->id : null;
             $cottage->business_profile_id = $businessProfile->id;
             $cottage->cottage_name = $validated['cottage_name'];
             $cottage->cottage_type = $validated['cottage_type'];
@@ -221,7 +220,7 @@ class CottageController extends Controller
         $user = Auth::user();
         
         // Check if user owns this cottage
-        if ($cottage->business->owner_id !== $user->id) {
+        if ($cottage->businessProfile->business->owner_id !== $user->id) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 

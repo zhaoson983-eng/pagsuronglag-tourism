@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Schema;
 
 class AdminController extends Controller
 {
@@ -102,32 +103,41 @@ class AdminController extends Controller
         $resortCount = BusinessProfile::where('business_type', 'resort')->where('status', 'approved')->count();
         $touristSpotCount = TouristSpot::count();
         
-        // Top Hotels by rating
-        $topHotels = BusinessProfile::where('business_type', 'hotel')
-            ->where('status', 'approved')
-            ->whereNotNull('average_rating')
-            ->where('average_rating', '>', 0)
-            ->orderByDesc('average_rating')
-            ->orderByDesc('total_ratings')
-            ->limit(5)
-            ->get();
+        // Top Hotels by rating - only if columns exist
+        $topHotels = collect();
+        if (Schema::hasColumns('business_profiles', ['average_rating', 'total_ratings'])) {
+            $topHotels = BusinessProfile::where('business_type', 'hotel')
+                ->where('status', 'approved')
+                ->whereNotNull('average_rating')
+                ->where('average_rating', '>', 0)
+                ->orderByDesc('average_rating')
+                ->orderByDesc('total_ratings')
+                ->limit(5)
+                ->get();
+        }
             
-        // Top Resorts by rating
-        $topResorts = BusinessProfile::where('business_type', 'resort')
-            ->where('status', 'approved')
-            ->whereNotNull('average_rating')
-            ->where('average_rating', '>', 0)
-            ->orderByDesc('average_rating')
-            ->orderByDesc('total_ratings')
-            ->limit(5)
-            ->get();
+        // Top Resorts by rating - only if columns exist
+        $topResorts = collect();
+        if (Schema::hasColumns('business_profiles', ['average_rating', 'total_ratings'])) {
+            $topResorts = BusinessProfile::where('business_type', 'resort')
+                ->where('status', 'approved')
+                ->whereNotNull('average_rating')
+                ->where('average_rating', '>', 0)
+                ->orderByDesc('average_rating')
+                ->orderByDesc('total_ratings')
+                ->limit(5)
+                ->get();
+        }
             
-        // Top Tourist Spots by rating
-        $topTouristSpots = TouristSpot::whereNotNull('average_rating')
-            ->orderByDesc('average_rating')
-            ->orderByDesc('total_ratings')
-            ->limit(5)
-            ->get();
+        // Top Tourist Spots by rating - only if columns exist
+        $topTouristSpots = collect();
+        if (Schema::hasColumns('tourist_spots', ['average_rating', 'total_ratings'])) {
+            $topTouristSpots = TouristSpot::whereNotNull('average_rating')
+                ->orderByDesc('average_rating')
+                ->orderByDesc('total_ratings')
+                ->limit(5)
+                ->get();
+        }
 
         // Get 5 most recently registered users with profile data
         $recentUsers = User::with('profile')
@@ -340,11 +350,14 @@ class AdminController extends Controller
             ->orderBy('likes_count', 'desc')
             ->first();
 
-        // Top Rated (by average rating)
-        $topRated = TouristSpot::where('total_ratings', '>', 0)
-            ->orderBy('average_rating', 'desc')
-            ->orderBy('total_ratings', 'desc')
-            ->first();
+        // Top Rated (by average rating) - only if columns exist
+        $topRated = null;
+        if (Schema::hasColumns('tourist_spots', ['average_rating', 'total_ratings'])) {
+            $topRated = TouristSpot::where('total_ratings', '>', 0)
+                ->orderBy('average_rating', 'desc')
+                ->orderBy('total_ratings', 'desc')
+                ->first();
+        }
 
         // Most Talked (by comments count)
         $mostTalked = TouristSpot::withCount('comments')

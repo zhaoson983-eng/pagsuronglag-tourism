@@ -89,11 +89,13 @@ class OrderController extends Controller
             $order = Order::create([
                 'order_number' => 'ORD-' . time() . '-' . $user->id,
                 'user_id' => $user->id,
+                'customer_id' => $user->id, // Same as user_id for customer orders
                 'business_id' => $businessId,
                 'subtotal' => $total,
                 'total' => $total,
+                'total_amount' => $total, // Same as total for simple orders
                 'status' => 'pending',
-                'payment_status' => 'unpaid',
+                'payment_status' => 'not_required', // No payment needed for pickup/reservation
                 'notes' => $request->input('notes', ''),
             ]);
 
@@ -117,7 +119,6 @@ class OrderController extends Controller
                     'product_id' => $item->product_id,
                     'quantity' => $item->quantity,
                     'price' => $item->product->price,
-                    'selected_flavor' => $item->selected_flavor,
                 ]);
             }
 
@@ -137,9 +138,6 @@ class OrderController extends Controller
 
                 foreach ($cartItems as $item) {
                     $messageContent .= "• {$item->product->name}";
-                    if ($item->selected_flavor) {
-                        $messageContent .= " ({$item->selected_flavor})";
-                    }
                     $messageContent .= " × {$item->quantity} = ₱" . number_format($item->product->price * $item->quantity, 2) . "\n";
                 }
 

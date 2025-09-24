@@ -188,7 +188,7 @@
                 <div class="text-sm text-gray-600">{{ $business->businessProfile->total_ratings ?? 0 }} ratings</div>
             </div>
             <div class="flex-1">
-                <div class="text-sm text-gray-600 mb-2">{{ $business->businessProfile->resortComments()->whereHas('user')->count() ?? 0 }} comments</div>
+                <div class="text-sm text-gray-600 mb-2">0 comments</div>
             </div>
         </div>
 
@@ -221,60 +221,10 @@
         @endauth
 
         <!-- Comments List -->
-        @if($business->businessProfile->resortComments && $business->businessProfile->resortComments()->whereHas('user')->count() > 0)
-            <div class="space-y-4" id="commentsList">
-                @foreach($business->businessProfile->resortComments->take(5) as $comment)
-                    @if($comment->user)
-                        <div class="border-b border-gray-200 pb-4" id="comment-{{ $comment->id }}">
-                            <div class="flex items-start space-x-3">
-                                <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                                    @if($comment->user && $comment->user->profile && $comment->user->profile->profile_picture)
-                                        <img src="{{ asset('storage/' . $comment->user->profile->profile_picture) }}"
-                                             alt="{{ $comment->user->name }}"
-                                             class="w-full h-full rounded-full object-cover">
-                                    @elseif($comment->user && $comment->user->profile_avatar)
-                                        <img src="{{ asset('storage/' . $comment->user->profile_avatar) }}"
-                                             alt="{{ $comment->user->name }}"
-                                             class="w-full h-full rounded-full object-cover">
-                                    @elseif($comment->user && $comment->user->profile_picture)
-                                        <img src="{{ asset('storage/' . $comment->user->profile_picture) }}"
-                                             alt="{{ $comment->user->name }}"
-                                             class="w-full h-full rounded-full object-cover">
-                                    @else
-                                        <div class="w-full h-full bg-blue-500 rounded-full flex items-center justify-center">
-                                            <span class="text-white text-xs font-bold">
-                                                {{ strtoupper(substr($comment->user->name, 0, 1)) }}
-                                            </span>
-                                        </div>
-                                    @endif
-                                </div>
-                                <div class="flex-1">
-                                    <div class="flex items-center justify-between mb-1">
-                                        <div class="flex items-center space-x-2">
-                                            <span class="font-medium text-gray-900">{{ $comment->user->name }}</span>
-                                            <span class="text-sm text-gray-500">{{ $comment->created_at->format('M d, Y') }}</span>
-                                        </div>
-                                    @auth
-                                        @if($comment->user_id === auth()->id())
-                                            <button onclick="deleteComment({{ $comment->id }})"
-                                                    class="text-red-500 hover:text-red-700 text-sm">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        @endif
-                                    @endauth
-                                </div>
-                                <p class="text-gray-700">{{ $comment->comment }}</p>
-                            </div>
-                        </div>
-                    @endif
-                @endforeach
-            </div>
-        @else
-            <div class="text-center py-8 text-gray-500" id="noCommentsMessage">
-                <i class="fas fa-comments text-4xl mb-2"></i>
-                <p>No comments yet. Be the first to share your experience!</p>
-            </div>
-        @endif
+        <div class="text-center py-8 text-gray-500" id="noCommentsMessage">
+            <i class="fas fa-comments text-4xl mb-2"></i>
+            <p>No comments yet. Be the first to share your experience!</p>
+        </div>
     </div>
 </div>
 

@@ -34,6 +34,7 @@ class CustomerController extends Controller
 
     /**
      * Get feed data for the dashboard (AJAX endpoint)
+     * Simplified to fetch all content from business_profiles table
      */
     public function getFeedData(Request $request)
     {
@@ -42,216 +43,179 @@ class CustomerController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
         
-        // This method now serves as a general feed with all types of content
-        // For specific feed types, we'll use the dedicated methods below
-        
-        $page = $request->get('page', 1);
-        $perPage = 10;
-        $offset = ($page - 1) * $perPage;
+        try {
+            $page = $request->get('page', 1);
+            $perPage = 10;
+            $offset = ($page - 1) * $perPage;
 
-        // Get published businesses (shops) - same as ProductController
-        $shopBusinesses = Business::with(['products', 'businessProfile'])
-            ->whereHas('businessProfile', function($query) {
-                $query->whereNotIn('business_type', ['hotel', 'resort'])
-                      ->where('status', 'approved');
-            })
-            ->where('is_published', true)
-            ->get();
+            // Get all approved business profiles (this includes shops, hotels, resorts)
+            $businessProfiles = BusinessProfile::with(['business', 'galleries'])
+                ->where('status', 'approved')
+                ->whereHas('business', function($q) {
+                    $q->where('is_published', true);
+                })
+                ->orderBy('created_at', 'desc')
+                ->get();
 
-        // Get published hotels - same as ProductController
-        $hotels = Business::with(['businessProfile', 'rooms'])
-            ->whereHas('businessProfile', function($query) {
-                $query->where('business_type', 'hotel')
-                      ->where('status', 'approved');
-            })
-            ->where('is_published', true)
-            ->get();
+            // Get active tourist spots (separate table)
+            $touristSpots = TouristSpot::where('is_active', true)
+                ->orderBy('created_at', 'desc')
+                ->get();
 
-        // Get published resorts - same as CustomerController resorts method
-        $resorts = BusinessProfile::with(['business', 'gallery'])
-            ->where('business_type', 'resort')
-            ->where('status', 'approved')
-            ->whereHas('business', function($q) {
-                $q->where('is_published', true);
-            })
-            ->get();
+            // Combine all items into a single feed
+            $feedItems = collect();
 
-        // Get active tourist spots
-        $touristSpots = TouristSpot::where('is_active', true)->get();
-
-        // Get featured products from shops
-        $products = Product::with(['business.businessProfile'])
-            ->whereHas('business', function($query) {
-                $query->where('is_published', true)
-                      ->whereHas('businessProfile', function($subQuery) {
-                          $subQuery->whereNotIn('business_type', ['hotel', 'resort'])
-                                   ->where('status', 'approved');
-                      });
-            })
-            ->get();
-
-        // Combine all items into a single feed
-        $feedItems = collect();
-
-        // Add shop businesses
-        foreach ($shopBusinesses as $business) {
-            $profile = $business->businessProfile;
-            if ($profile) {
+            // Add business profiles (shops, hotels, resorts)
+            foreach ($businessProfiles as $profile) {
                 $user = auth()->user();
-                $userLiked = $user ? $business->isLikedBy($user) : false;
-                $userRating = $user ? $business->ratings()->where('user_id', $user->id)->first() : null;
                 
+                // Determine the type and route based on business_type
+                $type = $profile->business_type ?? 'business';
+                $route = 'customer.business.show';
+                $routeParam = $profile->business ? $profile->business->id : $profile->id;
+                
+                if ($type === 'hotel') {
+                    $route = 'customer.hotels.show';
+                } elseif ($type === 'resort') {
+                    $route = 'customer.resorts.show';
+                    $routeParam = $profile->id;
+                }
+                
+                // Get the cover image
+                $image = null;
+                if ($profile->cover_image) {
+                    $image = Storage::url($profile->cover_image);
+                } elseif ($profile->business && $profile->business->cover_image) {
+                    $image = Storage::url($profile->business->cover_image);
+                } elseif ($profile->galleries && $profile->galleries->isNotEmpty()) {
+                    $image = Storage::url($profile->galleries->first()->image_path);
+                }
+                
+                // Get actual counts based on business type
+                $likeCount = 0;
+                $commentCount = 0;
+                $userLiked = false;
+                $userRating = 0;
+                $avgRating = 0;
+                $ratingCount = 0;
+                
+                if ($type === 'hotel') {
+                    $likeCount = $profile->hotelLikes()->count();
+                    $commentCount = $profile->hotelComments()->count();
+                    $userLiked = auth()->check() ? $profile->hotelLikes()->where('user_id', auth()->id())->exists() : false;
+                    $avgRating = (float)($profile->hotelRatings()->avg('rating') ?? 0);
+                    $ratingCount = (int)$profile->hotelRatings()->count();
+                    if (auth()->check()) {
+                        $rating = $profile->hotelRatings()->where('user_id', auth()->id())->first();
+                        $userRating = $rating ? $rating->rating : 0;
+                    }
+                } elseif ($type === 'resort') {
+                    $likeCount = $profile->resortLikes()->count();
+                    $commentCount = $profile->resortComments()->count();
+                    $userLiked = auth()->check() ? $profile->resortLikes()->where('user_id', auth()->id())->exists() : false;
+                    $avgRating = (float)($profile->resortRatings()->avg('rating') ?? 0);
+                    $ratingCount = (int)$profile->resortRatings()->count();
+                    if (auth()->check()) {
+                        $rating = $profile->resortRatings()->where('user_id', auth()->id())->first();
+                        $userRating = $rating ? $rating->rating : 0;
+                    }
+                } else {
+                    // For local_products/shops, use business relationship
+                    $business = $profile->business;
+                    $likeCount = $business ? $business->likes()->count() : 0;
+                    $commentCount = $business ? $business->comments()->count() : 0;
+                    $userLiked = $business && auth()->check() ? $business->isLikedBy(auth()->user()) : false;
+                    $avgRating = (float)($business ? $business->average_rating ?? 0 : $profile->average_rating ?? 0);
+                    $ratingCount = (int)($business ? $business->total_ratings ?? 0 : $profile->total_ratings ?? 0);
+                    if ($business && auth()->check()) {
+                        $rating = $business->ratings()->where('user_id', auth()->id())->first();
+                        $userRating = $rating ? $rating->rating : 0;
+                    }
+                }
+
                 $feedItems->push([
-                    'type' => 'business',
-                    'id' => $business->id,
-                    'title' => $profile->business_name ?? $business->name ?? 'Business',
+                    'type' => $profile->business_type, // Use actual business type (hotel/resort/shop)
+                    'id' => $profile->id, // Use business profile ID for hotel/resort API calls
+                    'title' => $profile->business_name ?? ($profile->business ? $profile->business->name : 'Business'),
                     'location' => $profile->address ?? 'Location not specified',
-                    'image' => $business->cover_image ? Storage::url($business->cover_image) : null,
+                    'description' => $profile->description ?? '',
+                    'image' => $image,
                     'profile_avatar' => $profile->profile_avatar ? Storage::url($profile->profile_avatar) : null,
-                    'rating' => (float)($business->average_rating ?? 0),
-                    'rating_count' => (int)($business->total_ratings ?? 0),
-                    'like_count' => $business->likes->count(),
-                    'comment_count' => $business->comments()->count(),
+                    'rating' => $avgRating,
+                    'rating_count' => $ratingCount,
+                    'like_count' => $likeCount,
+                    'comment_count' => $commentCount,
                     'user_liked' => $userLiked,
-                    'user_rating' => $userRating ? $userRating->rating : 0,
+                    'user_rating' => $userRating,
                     'status' => 'Published',
-                    'url' => route('customer.business.show', $business->id),
-                    'created_at' => $business->created_at
+                    'url' => route($route, $routeParam),
+                    'created_at' => $profile->created_at->toIso8601String()
                 ]);
             }
-        }
 
-        // Add hotels
-        foreach ($hotels as $hotel) {
-            $profile = $hotel->businessProfile;
-            if ($profile) {
-                $user = auth()->user();
-                $userLiked = $user ? $profile->hotelLikes()->where('user_id', $user->id)->exists() : false;
-                $userRating = $user ? $profile->hotelRatings()->where('user_id', $user->id)->first() : null;
+            // Add tourist spots
+            foreach ($touristSpots as $spot) {
+                $image = null;
+                if ($spot->cover_image) {
+                    $image = Storage::url($spot->cover_image);
+                } elseif ($spot->image) {
+                    $image = Storage::url($spot->image);
+                }
                 
+                // Get actual counts for tourist spots
+                $likeCount = $spot->likes()->count();
+                $commentCount = $spot->comments ? $spot->comments()->count() : 0;
+                $userLiked = auth()->check() ? $spot->likes()->where('user_id', auth()->id())->exists() : false;
+                $userRating = 0;
+                if (auth()->check()) {
+                    $rating = $spot->ratings()->where('user_id', auth()->id())->first();
+                    $userRating = $rating ? $rating->rating : 0;
+                }
+
                 $feedItems->push([
-                    'type' => 'hotel',
-                    'id' => $profile->id, // Use profile ID for hotels
-                    'title' => $profile->business_name ?? $hotel->name ?? 'Hotel',
-                    'location' => $profile->address ?? 'Location not specified',
-                    'image' => $profile->cover_image ? Storage::url($profile->cover_image) : null,
-                    'profile_avatar' => $profile->profile_avatar ? Storage::url($profile->profile_avatar) : null,
-                    'rating' => (float)($profile->average_rating ?? 0),
-                    'rating_count' => (int)($profile->total_ratings ?? 0),
-                    'like_count' => $profile->hotelLikes()->count(),
-                    'comment_count' => $profile->hotelComments()->count(),
+                    'type' => 'attraction',
+                    'id' => $spot->id,
+                    'title' => $spot->name ?? 'Tourist Spot',
+                    'location' => $spot->location ?? 'Location not specified',
+                    'description' => $spot->description ?? '',
+                    'image' => $image,
+                    'profile_avatar' => null,
+                    'rating' => (float)($spot->average_rating ?? 0),
+                    'rating_count' => (int)($spot->total_ratings ?? 0),
+                    'like_count' => $likeCount,
+                    'comment_count' => $commentCount,
                     'user_liked' => $userLiked,
-                    'user_rating' => $userRating ? $userRating->rating : 0,
+                    'user_rating' => $userRating,
                     'status' => 'Published',
-                    'url' => route('customer.hotels.show', $hotel->id),
-                    'created_at' => $hotel->created_at
+                    'url' => route('customer.attractions.show', $spot->id),
+                    'created_at' => $spot->created_at->toIso8601String()
                 ]);
             }
-        }
 
-        // Add resorts
-        foreach ($resorts as $resort) {
-            $user = auth()->user();
-            $userLiked = $user ? $resort->resortLikes()->where('user_id', $user->id)->exists() : false;
-            $userRating = $user ? $resort->resortRatings()->where('user_id', $user->id)->first() : null;
-            
-            $feedItems->push([
-                'type' => 'resort',
-                'id' => $resort->id,
-                'title' => $resort->business_name ?? 'Resort',
-                'location' => $resort->address ?? 'Location not specified',
-                'image' => $resort->cover_image ? Storage::url($resort->cover_image) : ($resort->gallery->first() ? Storage::url($resort->gallery->first()->image_path) : null),
-                'profile_avatar' => $resort->profile_avatar ? Storage::url($resort->profile_avatar) : null,
-                'rating' => (float)($resort->average_rating ?? 0),
-                'rating_count' => (int)($resort->total_ratings ?? 0),
-                'like_count' => $resort->resortLikes()->count(),
-                'comment_count' => $resort->resortComments()->count(),
-                'user_liked' => $userLiked,
-                'user_rating' => $userRating ? $userRating->rating : 0,
-                'status' => 'Published',
-                'url' => route('customer.resorts.show', $resort->id),
-                'created_at' => $resort->created_at
+            // Shuffle the feed items for variety
+            $feedItems = $feedItems->shuffle();
+
+            // Paginate the results
+            $paginatedItems = $feedItems->slice($offset, $perPage)->values();
+            $hasMore = $feedItems->count() > ($offset + $perPage);
+
+            return response()->json([
+                'items' => $paginatedItems,
+                'hasMore' => $hasMore,
+                'currentPage' => $page,
+                'total' => $feedItems->count()
             ]);
-        }
-
-        // Add tourist spots
-        foreach ($touristSpots as $spot) {
-            $user = auth()->user();
-            $userLiked = $user ? $spot->likes()->where('user_id', $user->id)->exists() : false;
-            $userRating = $user ? $spot->ratings()->where('user_id', $user->id)->first() : null;
             
-            $feedItems->push([
-                'type' => 'attraction',
-                'id' => $spot->id,
-                'title' => $spot->name ?? 'Tourist Spot',
-                'location' => $spot->location ?? 'Location not specified',
-                'image' => $spot->cover_image ? Storage::url($spot->cover_image) : ($spot->image ? Storage::url($spot->image) : null),
-                'profile_avatar' => $spot->profile_avatar ? Storage::url($spot->profile_avatar) : null,
-                'rating' => (float)($spot->average_rating ?? 0),
-                'rating_count' => (int)($spot->total_ratings ?? 0),
-                'like_count' => $spot->likes()->count(),
-                'comment_count' => $spot->comments()->count(),
-                'user_liked' => $userLiked,
-                'user_rating' => $userRating ? $userRating->rating : 0,
-                'status' => 'Published',
-                'url' => route('customer.attractions.show', $spot->id),
-                'created_at' => $spot->created_at
+        } catch (\Exception $e) {
+            \Log::error('Feed Data Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
             ]);
-        }
-
-        // Add products
-        foreach ($products as $product) {
-            $businessName = 'Local Business';
-            if ($product->business && $product->business->businessProfile) {
-                $businessName = $product->business->businessProfile->business_name ?? $product->business->name ?? 'Local Business';
-            }
             
-            $user = auth()->user();
-            $userLiked = $user ? $product->likes()->where('user_id', $user->id)->exists() : false;
-            $userRating = $user ? $product->ratings()->where('user_id', $user->id)->first() : null;
-            
-            $feedItems->push([
-                'type' => 'product',
-                'id' => $product->id,
-                'title' => $product->name ?? 'Product',
-                'location' => $businessName,
-                'image' => $product->image ? Storage::url($product->image) : null,
-                'profile_avatar' => null, // Products don't have profile avatars
-                'rating' => (float)($product->average_rating ?? 0),
-                'rating_count' => (int)($product->total_ratings ?? 0),
-                'like_count' => $product->likes()->count(),
-                'comment_count' => $product->comments()->count(),
-                'user_liked' => $userLiked,
-                'user_rating' => $userRating ? $userRating->rating : 0,
-                'status' => 'Published',
-                'url' => route('customer.business.show', $product->business_id),
-                'created_at' => $product->created_at
-            ]);
+            return response()->json([
+                'error' => 'Failed to load feed data',
+                'message' => $e->getMessage()
+            ], 500);
         }
-
-        // Debug information
-        \Log::info('Feed Data Debug', [
-            'shop_businesses_count' => $shopBusinesses->count(),
-            'hotels_count' => $hotels->count(),
-            'resorts_count' => $resorts->count(),
-            'tourist_spots_count' => $touristSpots->count(),
-            'products_count' => $products->count(),
-            'feed_items_count' => $feedItems->count()
-        ]);
-
-
-        // Shuffle the feed items for Instagram-like randomization
-        $feedItems = $feedItems->shuffle();
-
-        // Paginate the results
-        $paginatedItems = $feedItems->slice($offset, $perPage)->values();
-        $hasMore = $feedItems->count() > ($offset + $perPage);
-
-        return response()->json([
-            'items' => $paginatedItems,
-            'hasMore' => $hasMore,
-            'currentPage' => $page
-        ]);
     }
 
     /**
@@ -269,26 +233,37 @@ class CustomerController extends Controller
 
         // Check if it's a hotel/resort or regular business
         if ($business->businessProfile && in_array($business->businessProfile->business_type, ['hotel', 'resort'])) {
-            // Load rooms for hotels/resorts (only available ones for customers)
-            $business->load(['rooms.images', 'businessProfile.galleries']);
-            $rooms = $business->rooms()->where('is_available', true)->get();
+            // Load business profile with galleries only (skip comments for now)
+            $business->load(['businessProfile.galleries']);
+            
+            // Get rooms through business profile relationship
+            $rooms = collect(); // Initialize empty collection
+            if ($business->businessProfile) {
+                $rooms = $business->businessProfile->rooms()
+                    ->with('images')
+                    ->where('is_available', true)
+                    ->get();
+            }
             
             // Hotels only have rooms, resorts have both rooms and cottages
             if ($business->businessProfile->business_type === 'hotel') {
                 return view('customer.hotel-show', compact('business', 'rooms'));
             } else {
                 // For resorts, also load cottages
-                $cottages = $business->cottages()->with('galleries')->where('is_available', true)->get();
+                $cottages = collect(); // Initialize empty collection
+                if ($business->businessProfile) {
+                    $cottages = $business->businessProfile->cottages()
+                        ->with('galleries')
+                        ->where('is_available', true)
+                        ->get();
+                }
                 return view('customer.resort-show', compact('business', 'rooms', 'cottages'));
             }
         } else {
-            // Load products, galleries, and comments for regular businesses
+            // Load products and galleries for regular businesses (skip comments for now)
             $business->load([
                 'products', 
-                'businessProfile.galleries',
-                'comments' => function($query) {
-                    $query->with('user.profile')->whereHas('user');
-                }
+                'businessProfile.galleries'
             ]);
             $products = $business->products;
             
@@ -300,7 +275,7 @@ class CustomerController extends Controller
      * Search across businesses, products, and attractions.
      */
     /**
-     * Get hotels feed data
+     * Get hotels feed data - simplified to use business_profiles table
      */
     public function getHotelsFeedData(Request $request)
     {
@@ -308,54 +283,75 @@ class CustomerController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        $page = $request->get('page', 1);
-        $perPage = 10;
-        $offset = ($page - 1) * $perPage;
+        try {
+            $page = $request->get('page', 1);
+            $perPage = 10;
+            $offset = ($page - 1) * $perPage;
 
-        // Get published hotels
-        $hotels = Business::with(['businessProfile', 'rooms'])
-            ->whereHas('businessProfile', function($query) {
-                $query->where('business_type', 'hotel')
-                      ->where('status', 'approved');
-            })
-            ->where('is_published', true)
-            ->get()
-            ->map(function($hotel) {
-                $profile = $hotel->businessProfile;
-                $user = auth()->user();
-                $userLiked = $user ? $profile->hotelLikes()->where('user_id', $user->id)->exists() : false;
-                $userRating = $user ? $profile->hotelRatings()->where('user_id', $user->id)->first() : null;
-                
-                return [
-                    'type' => 'hotel',
-                    'id' => $profile->id,
-                    'title' => $profile->business_name ?? $hotel->name ?? 'Hotel',
-                    'location' => $profile->address ?? 'Location not specified',
-                    'description' => $profile->description ?? '',
-                    'image' => $profile->cover_image ? Storage::url($profile->cover_image) : null,
-                    'profile_avatar' => $profile->profile_avatar ? Storage::url($profile->profile_avatar) : null,
-                    'rating' => (float)($profile->average_rating ?? 0),
-                    'rating_count' => (int)($profile->total_ratings ?? 0),
-                    'like_count' => $profile->hotelLikes()->count(),
-                    'comment_count' => $profile->hotelComments()->count(),
-                    'user_liked' => $userLiked,
-                    'user_rating' => $userRating ? $userRating->rating : 0,
-                    'status' => 'Published',
-                    'url' => route('customer.hotels.show', $hotel->id),
-                    'created_at' => $hotel->created_at->toIso8601String(),
-                    'min_price' => $hotel->rooms->min('price_per_night') ?? 0,
-                    'rooms_count' => $hotel->rooms->count()
-                ];
-            });
+            // Get hotels from business_profiles table
+            $hotels = BusinessProfile::with(['business', 'galleries'])
+                ->where('business_type', 'hotel')
+                ->where('status', 'approved')
+                ->whereHas('business', function($q) {
+                    $q->where('is_published', true);
+                })
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function($profile) {
+                    // Get the cover image
+                    $image = null;
+                    if ($profile->cover_image) {
+                        $image = Storage::url($profile->cover_image);
+                    } elseif ($profile->business && $profile->business->cover_image) {
+                        $image = Storage::url($profile->business->cover_image);
+                    } elseif ($profile->galleries && $profile->galleries->isNotEmpty()) {
+                        $image = Storage::url($profile->galleries->first()->image_path);
+                    }
+                    
+                    // Get actual counts from hotel-specific tables
+                    $likeCount = $profile->hotelLikes()->count();
+                    $commentCount = $profile->hotelComments()->count();
+                    $userLiked = auth()->check() ? $profile->hotelLikes()->where('user_id', auth()->id())->exists() : false;
+                    $userRating = 0;
+                    if (auth()->check()) {
+                        $rating = $profile->hotelRatings()->where('user_id', auth()->id())->first();
+                        $userRating = $rating ? $rating->rating : 0;
+                    }
 
-        return response()->json([
-            'items' => $hotels->slice($offset, $perPage)->values(),
-            'hasMore' => $hotels->count() > ($offset + $perPage)
-        ]);
+                    return [
+                        'type' => 'hotel', // Use 'hotel' for API consistency
+                        'id' => $profile->id, // Use business profile ID for hotel API calls
+                        'title' => $profile->business_name ?? ($profile->business ? $profile->business->name : 'Hotel'),
+                        'location' => $profile->address ?? 'Location not specified',
+                        'description' => $profile->description ?? '',
+                        'image' => $image,
+                        'profile_avatar' => $profile->profile_avatar ? Storage::url($profile->profile_avatar) : null,
+                        'rating' => (float)($profile->hotelRatings()->avg('rating') ?? 0),
+                        'rating_count' => (int)$profile->hotelRatings()->count(),
+                        'like_count' => $likeCount,
+                        'comment_count' => $commentCount,
+                        'user_liked' => $userLiked,
+                        'user_rating' => $userRating,
+                        'status' => 'Published',
+                        'url' => route('customer.hotels.show', $profile->business ? $profile->business->id : $profile->id),
+                        'created_at' => $profile->created_at->toIso8601String()
+                    ];
+                });
+
+            return response()->json([
+                'items' => $hotels->slice($offset, $perPage)->values(),
+                'hasMore' => $hotels->count() > ($offset + $perPage),
+                'total' => $hotels->count()
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Hotels Feed Error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to load hotels'], 500);
+        }
     }
 
     /**
-     * Get resorts feed data
+     * Get resorts feed data - simplified to use business_profiles table
      */
     public function getResortsFeedData(Request $request)
     {
@@ -363,51 +359,71 @@ class CustomerController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        $page = $request->get('page', 1);
-        $perPage = 10;
-        $offset = ($page - 1) * $perPage;
+        try {
+            $page = $request->get('page', 1);
+            $perPage = 10;
+            $offset = ($page - 1) * $perPage;
 
-        // Get published resorts
-        $resorts = BusinessProfile::with(['business', 'gallery'])
-            ->where('business_type', 'resort')
-            ->where('status', 'approved')
-            ->whereHas('business', function($q) {
-                $q->where('is_published', true);
-            })
-            ->get()
-            ->map(function($resort) {
-                $user = auth()->user();
-                $userLiked = $user ? $resort->resortLikes()->where('user_id', $user->id)->exists() : false;
-                $userRating = $user ? $resort->resortRatings()->where('user_id', $user->id)->first() : null;
-                
-                return [
-                    'type' => 'resort',
-                    'id' => $resort->id,
-                    'title' => $resort->business_name ?? 'Resort',
-                    'location' => $resort->address ?? 'Location not specified',
-                    'description' => $resort->description ?? '',
-                    'image' => $resort->cover_image ? Storage::url($resort->cover_image) : 
-                             ($resort->gallery->first() ? Storage::url($resort->gallery->first()->image_path) : null),
-                    'profile_avatar' => $resort->profile_avatar ? Storage::url($resort->profile_avatar) : null,
-                    'rating' => (float)($resort->average_rating ?? 0),
-                    'rating_count' => (int)($resort->total_ratings ?? 0),
-                    'like_count' => $resort->resortLikes()->count(),
-                    'comment_count' => $resort->resortComments()->count(),
-                    'user_liked' => $userLiked,
-                    'user_rating' => $userRating ? $userRating->rating : 0,
-                    'status' => 'Published',
-                    'url' => route('customer.resorts.show', $resort->id),
-                    'created_at' => $resort->created_at->toIso8601String(),
-                    'min_price' => $resort->business->rooms->min('price_per_night') ?? 0,
-                    'rooms_count' => $resort->business->rooms->count(),
-                    'cottages_count' => $resort->business->cottages->count()
-                ];
-            });
+            // Get resorts from business_profiles table
+            $resorts = BusinessProfile::with(['business', 'galleries'])
+                ->where('business_type', 'resort')
+                ->where('status', 'approved')
+                ->whereHas('business', function($q) {
+                    $q->where('is_published', true);
+                })
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function($profile) {
+                    // Get the cover image
+                    $image = null;
+                    if ($profile->cover_image) {
+                        $image = Storage::url($profile->cover_image);
+                    } elseif ($profile->business && $profile->business->cover_image) {
+                        $image = Storage::url($profile->business->cover_image);
+                    } elseif ($profile->galleries && $profile->galleries->isNotEmpty()) {
+                        $image = Storage::url($profile->galleries->first()->image_path);
+                    }
+                    
+                    // Get actual counts from resort-specific tables
+                    $likeCount = $profile->resortLikes()->count();
+                    $commentCount = $profile->resortComments()->count();
+                    $userLiked = auth()->check() ? $profile->resortLikes()->where('user_id', auth()->id())->exists() : false;
+                    $userRating = 0;
+                    if (auth()->check()) {
+                        $rating = $profile->resortRatings()->where('user_id', auth()->id())->first();
+                        $userRating = $rating ? $rating->rating : 0;
+                    }
 
-        return response()->json([
-            'items' => $resorts->slice($offset, $perPage)->values(),
-            'hasMore' => $resorts->count() > ($offset + $perPage)
-        ]);
+                    return [
+                        'type' => 'resort', // Use 'resort' for API consistency
+                        'id' => $profile->id, // Use business profile ID for resort API calls
+                        'title' => $profile->business_name ?? 'Resort',
+                        'location' => $profile->address ?? 'Location not specified',
+                        'description' => $profile->description ?? '',
+                        'image' => $image,
+                        'profile_avatar' => $profile->profile_avatar ? Storage::url($profile->profile_avatar) : null,
+                        'rating' => (float)($profile->resortRatings()->avg('rating') ?? 0),
+                        'rating_count' => (int)$profile->resortRatings()->count(),
+                        'like_count' => $likeCount,
+                        'comment_count' => $commentCount,
+                        'user_liked' => $userLiked,
+                        'user_rating' => $userRating,
+                        'status' => 'Published',
+                        'url' => route('customer.resorts.show', $profile->id),
+                        'created_at' => $profile->created_at->toIso8601String()
+                    ];
+                });
+
+            return response()->json([
+                'items' => $resorts->slice($offset, $perPage)->values(),
+                'hasMore' => $resorts->count() > ($offset + $perPage),
+                'total' => $resorts->count()
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Resorts Feed Error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to load resorts'], 500);
+        }
     }
 
     /**
@@ -852,41 +868,18 @@ class CustomerController extends Controller
 
     public function getBusinessProfileComments($id)
     {
-        $businessProfile = BusinessProfile::findOrFail($id);
-        $comments = $businessProfile->comments()->with('user')->latest()->get();
-
+        // Temporarily disabled - comment tables don't exist
         return response()->json([
-            'comments' => $comments->map(function ($comment) {
-                return [
-                    'user_name' => $comment->user->name,
-                    'comment' => $comment->comment,
-                    'created_at' => $comment->created_at->diffForHumans(),
-                ];
-            })
+            'comments' => []
         ]);
     }
 
     public function commentBusinessProfile(Request $request, $id)
     {
-        if (!Auth::check()) {
-            return response()->json(['error' => 'Authentication required'], 401);
-        }
-
-        $request->validate([
-            'comment' => 'required|string|max:1000'
-        ]);
-
-        $businessProfile = BusinessProfile::findOrFail($id);
-
-        $businessProfile->comments()->create([
-            'user_id' => Auth::id(),
-            'comment' => $request->comment
-        ]);
-
+        // Temporarily disabled - comment tables don't exist
         return response()->json([
-            'success' => true,
-            'message' => 'Comment posted successfully!'
-        ]);
+            'error' => 'Comments are temporarily disabled'
+        ], 503);
     }
 
     // Product-specific Methods
@@ -949,50 +942,17 @@ class CustomerController extends Controller
 
     public function getProductComments($id)
     {
-        $product = Product::findOrFail($id);
-        $comments = $product->comments()->with('user.profile')->whereHas('user')->latest()->get();
-
+        // Temporarily disabled - comment tables don't exist
         return response()->json([
-            'comments' => $comments->map(function ($comment) {
-                if (!$comment->user) {
-                    return null;
-                }
-                
-                return [
-                    'id' => $comment->id,
-                    'user' => [
-                        'id' => $comment->user->id,
-                        'name' => $comment->user->name,
-                        'profile_picture' => $comment->user->profile ? $comment->user->profile->profile_picture : null
-                    ],
-                    'comment' => $comment->comment,
-                    'created_at_human' => $comment->created_at->diffForHumans(),
-                    'created_at' => $comment->created_at->toISOString()
-                ];
-            })->filter()->values()
+            'comments' => []
         ]);
     }
 
     public function commentProduct(Request $request, $id)
     {
-        if (!Auth::check()) {
-            return response()->json(['error' => 'Authentication required'], 401);
-        }
-
-        $request->validate([
-            'comment' => 'required|string|max:1000'
-        ]);
-
-        $product = Product::findOrFail($id);
-
-        $product->comments()->create([
-            'user_id' => Auth::id(),
-            'comment' => $request->comment
-        ]);
-
+        // Temporarily disabled - comment tables don't exist
         return response()->json([
-            'success' => true,
-            'message' => 'Comment posted successfully!'
-        ]);
+            'error' => 'Comments are temporarily disabled'
+        ], 503);
     }
 }

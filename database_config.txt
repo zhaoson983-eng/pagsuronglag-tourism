@@ -1,0 +1,11 @@
+# Laravel Database Configuration for Pagsurong Lagonoy
+# Add these lines to your .env file
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=pagsuronglag
+DB_USERNAME=root
+DB_PASSWORD=
+
+# Make sure these lines exist in your .env file

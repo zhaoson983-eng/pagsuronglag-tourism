@@ -65,9 +65,9 @@ class RatingController extends Controller
 
         return response()->json([
             'success' => true,
-            'average_rating' => $business->fresh()->average_rating,
+            'average_rating' => (float)($business->fresh()->average_rating ?? 0),
             'total_ratings' => $business->ratings()->count(),
-            'user_rating' => $request->rating,
+            'user_rating' => (int)$request->rating,
         ]);
     }
 
@@ -375,7 +375,8 @@ class RatingController extends Controller
         return response()->json([
             'success' => true,
             'liked' => $liked,
-            'likes_count' => $product->likes()->count(),
+            'like_count' => $product->likes()->count(),
+            'likes_count' => $product->likes()->count(), // Keep both for compatibility
         ]);
     }
 
@@ -402,7 +403,8 @@ class RatingController extends Controller
         return response()->json([
             'success' => true,
             'liked' => $liked,
-            'likes_count' => $business->likes()->count(),
+            'like_count' => $business->likes()->count(),
+            'likes_count' => $business->likes()->count(), // Keep both for compatibility
         ]);
     }
 
